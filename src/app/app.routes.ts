@@ -1,6 +1,8 @@
 import { Routes } from '@angular/router';
-import { Formulario } from './formulario/formulario';
+import { FormularioComponent } from './formulario/formulario';
+import { LoginComponent } from './login/login';
 
 export const routes: Routes = [
-    { path: 'formulario', component: Formulario },
+    { path: '', component: LoginComponent },
+    { path: 'formulario', component: FormularioComponent }
 ];

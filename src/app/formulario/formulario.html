@@ -3,24 +3,19 @@
   <h2 class="titulo-form">Envio de propuestas</h2>
   
   <mat-form-field appearance="fill">
-    <mat-label>Nombre del operador</mat-label>
-    <input matInput [(ngModel)]="NombreOperador">
-  </mat-form-field>
+  <mat-label>Nombre del operador</mat-label>
+  <input matInput [(ngModel)]="NombreOperador" readonly>
+</mat-form-field>
 
-  <mat-form-field appearance="fill">
-  <mat-label>Dni</mat-label>
-  <input matInput [(ngModel)]="Dni">
-  </mat-form-field>
-
-  <mat-form-field appearance="fill">
+<mat-form-field appearance="fill">
   <mat-label>Correo corporativo</mat-label>
-  <input matInput [(ngModel)]="CorreoCorporativo">
-  </mat-form-field>
+  <input matInput [(ngModel)]="CorreoCorporativo" readonly>
+</mat-form-field>
 
-  <mat-form-field appearance="fill">
+<mat-form-field appearance="fill">
   <mat-label>Cosabcli</mat-label>
-  <input matInput [(ngModel)]="Cosabcli">
-  </mat-form-field>
+  <input matInput [(ngModel)]="Cosabcli" readonly>
+</mat-form-field>
 
   <mat-radio-group [(ngModel)]="Tipo" name="Tipo">
   <mat-radio-button value="compra">Compra</mat-radio-button>
@@ -51,13 +46,4 @@
     <button mat-raised-button color="primary" type="button" (click)="grabar()">Grabar</button>
   </div> 
 
-</div>
-
-<div *ngIf="mostrarDatos">
-  <mat-card style="margin-top: 20px; width: 350px;">
-    <mat-card-title>Datos guardados</mat-card-title>
-    <mat-card-content>
-      {{mensaje}}
-    </mat-card-content>
-  </mat-card>
 </div>

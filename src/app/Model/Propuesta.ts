@@ -1,6 +1,5 @@
 export interface Propuesta {
   NombreOperador: string;
-  Dni: string;
   CorreoCorporativo: string;
   Cosabcli: string;
   Tipo: string;

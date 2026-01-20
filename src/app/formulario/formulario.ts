@@ -1,84 +1,109 @@
-import { ChangeDetectorRef, Component,LOCALE_ID } from '@angular/core';
-import localeEs from '@angular/common/locales/es';
-import { registerLocaleData } from '@angular/common';
-import { FormsModule } from '@angular/forms';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { RepresentanteService } from '../services/RepresentanteService';
+import { PropuestaService } from '../services/PropuestaService';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
-import {MatCardModule} from '@angular/material/card';
-import { ActivatedRoute } from '@angular/router';
 import { MatRadioModule } from '@angular/material/radio';
-import { PropuestaService } from '../services/PropuestaService';
+import { MatCardModule } from '@angular/material/card';
 import { Propuesta } from '../Model/Propuesta';
-
-registerLocaleData(localeEs);
 
 @Component({
   selector: 'app-pagina-form',
+  standalone: true,
+  templateUrl: './formulario.html',
+  styleUrls: ['./formulario.css'],
   imports: [
-    FormsModule,
     CommonModule,
+    FormsModule,
     MatFormFieldModule,
     MatInputModule,
     MatButtonModule,
     MatDatepickerModule,
     MatNativeDateModule,
-    MatCardModule,
-    MatRadioModule
-  ],
-  templateUrl: './formulario.html',
-  styleUrl: './formulario.css',
+    MatRadioModule,
+    MatCardModule
+  ]
 })
-export class Formulario {
+export class FormularioComponent implements OnInit {
 
-constructor(
-  private route: ActivatedRoute,
-  private propuestaService: PropuestaService,
-  private cdr: ChangeDetectorRef
-) {}
+  // 🔹 Datos del representante
+  NombreOperador = '';
+  CorreoCorporativo = '';
+  Cosabcli = '';
 
-NombreOperador = '';
-Dni = '';
-CorreoCorporativo = '';
-Cosabcli = '';
-Tipo = '';
-Cantidad : number =  0;
-Instrumento = '';
-Precio: number =  0;
-Moneda = '';
+  // 🔹 Datos del formulario
+  Tipo = '';
+  Cantidad: number | null = null;
+  Instrumento = '';
+  Precio: number | null = null;
+  Moneda = '';
 
-mensaje = '';
-bloqueado = false;
-mostrarDatos = false;
+  bloqueado = false;
 
-grabar() {
+  constructor(
+    private representanteService: RepresentanteService,
+    private propuestaService: PropuestaService,
+    private cdr: ChangeDetectorRef
+  ) {}
 
-  const propuesta :Propuesta = {
-  NombreOperador : this.NombreOperador,
-  Dni : this.Dni,
-  CorreoCorporativo : this.CorreoCorporativo,
-  Cosabcli : this.Cosabcli,
-  Tipo : this.Tipo,
-  Cantidad : this.Cantidad,
-  Instrumento : this.Instrumento,
-  Precio : this.Precio,
-  Moneda : this.Moneda
+  ngOnInit(): void {
+  const userId = localStorage.getItem('userId');
+
+  if (!userId) {
+    console.error('No hay userId en localStorage');
+    return;
   }
 
-  const peticion = this.propuestaService.registrar(propuesta); // no existe → insertar
+  this.representanteService.getById(Number(userId))
+    .subscribe({
+      next: (rep) => {
+        console.log('Representante cargado:', rep);
 
-  peticion.subscribe({
-    next: () => {
-      this.mensaje = "Se enviaron los datos correctamente";
-    },
-    error: err => {
-      console.error(err);
-      console.error(propuesta);
-      alert("Error al guardar");
-    }
-  });
+        // ⚠️ nombres EXACTOS como vienen del backend
+        this.NombreOperador = rep.nombre;
+        this.CorreoCorporativo = rep.correoCorporativo;
+        this.Cosabcli = rep.cosabcli;
+
+        // 🔴 ESTO ES LA CLAVE
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Error cargando representante', err);
+      }
+    });
 }
+
+
+  grabar(): void {
+
+  if (this.Cantidad === null || this.Precio === null) {
+    alert('Cantidad y Precio son obligatorios');
+    return;
+  }
+
+  const propuesta: Propuesta = {
+    NombreOperador: this.NombreOperador,
+    CorreoCorporativo: this.CorreoCorporativo,
+    Cosabcli: this.Cosabcli,
+    Tipo: this.Tipo,
+    Cantidad: this.Cantidad,
+    Instrumento: this.Instrumento,
+    Precio: this.Precio,
+    Moneda: this.Moneda
+  };
+
+  console.log(propuesta)
+
+  this.propuestaService.registrar(propuesta)
+    .subscribe({
+      next: () => alert('Propuesta enviada correctamente'),
+      error: () => alert('Error al enviar la propuesta')
+    });
+}
+
 }
