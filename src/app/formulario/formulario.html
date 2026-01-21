@@ -22,10 +22,30 @@
   <mat-radio-button value="venta">Venta</mat-radio-button>
   </mat-radio-group>
 
-  <mat-form-field appearance="fill">
+ <mat-form-field appearance="fill">
   <mat-label>Instrumento</mat-label>
-  <input matInput [(ngModel)]="Instrumento">
-  </mat-form-field>
+
+  <input
+    matInput
+    [(ngModel)]="Instrumento"
+    (ngModelChange)="filtrarValores($event)"
+    (focus)="onInstrumentoFocus()"
+    (blur)="validarInstrumento()"
+    [matAutocomplete]="auto"
+  >
+
+  <mat-autocomplete
+    #auto="matAutocomplete"
+    (optionSelected)="onInstrumentoSeleccionado($event.option.value)"
+  >
+    <mat-option
+      *ngFor="let v of valoresFiltrados"
+      [value]="v.desval"
+    >
+      {{ v.desval }}
+    </mat-option>
+  </mat-autocomplete>
+</mat-form-field>
 
   <mat-form-field appearance="fill">
   <mat-label>Cantidad</mat-label>

@@ -12,6 +12,9 @@ import { MatRadioModule } from '@angular/material/radio';
 import { MatCardModule } from '@angular/material/card';
 import { Propuesta } from '../Model/Propuesta';
 import { Router } from '@angular/router';
+import { Valor } from '../Model/Valor';
+import { ValorService } from '../services/ValorService';
+import { MatAutocompleteModule } from '@angular/material/autocomplete';
 
 @Component({
   selector: 'app-pagina-form',
@@ -27,7 +30,8 @@ import { Router } from '@angular/router';
     MatDatepickerModule,
     MatNativeDateModule,
     MatRadioModule,
-    MatCardModule
+    MatCardModule,
+    MatAutocompleteModule
   ]
 })
 export class FormularioComponent implements OnInit {
@@ -42,15 +46,21 @@ export class FormularioComponent implements OnInit {
   Precio: number | null = null;
   Mercado = '';
   
+  valores: Valor[] = [];
+  valoresFiltrados: Valor[] = [];
+  
   bloqueado: boolean = false;
 
   get monto(): number {
-  return (this.Cantidad || 0) * (this.Precio || 0);
-}
+    return (this.Cantidad || 0) * (this.Precio || 0);
+  }
+
+ 
 
   constructor(
     private representanteService: RepresentanteService,
     private propuestaService: PropuestaService,
+    private valorService: ValorService,
     private cdr: ChangeDetectorRef,
     private router: Router
   ) {}
@@ -81,6 +91,17 @@ export class FormularioComponent implements OnInit {
           }
         }
       });
+
+    this.valorService.getAll().subscribe({
+    next: (data) => {
+      this.valores = data;
+      this.valoresFiltrados = [];
+    },
+    error: (err) => {
+      console.error(err);
+    }
+    });
+
   }
 
   grabar(): void {
@@ -107,4 +128,36 @@ export class FormularioComponent implements OnInit {
         error: () => alert('Error al enviar la propuesta')
       });
   }
+
+filtrarValores(texto: string) {
+  if (!texto) {
+    this.valoresFiltrados = [];
+    return;
+  }
+
+  const filtro = texto.toLowerCase();
+
+  this.valoresFiltrados = this.valores.filter(v =>
+    v.desval.toLowerCase().includes(filtro)
+  );
+}
+
+  validarInstrumento() {
+  const existe = this.valores.some(
+    v => v.desval.toLowerCase() === this.Instrumento.toLowerCase()
+  );
+
+  if (!existe) {
+    this.Instrumento = '';
+  }
+}
+
+ onInstrumentoSeleccionado(valor: string) {
+   this.Instrumento = valor;
+  this.valoresFiltrados = [];
+}
+
+onInstrumentoFocus() {
+  this.valoresFiltrados = [];
+}
 }
