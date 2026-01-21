@@ -23,23 +23,33 @@
   </mat-radio-group>
 
   <mat-form-field appearance="fill">
-  <mat-label>Cantidad</mat-label>
-  <input matInput type="number" [(ngModel)]="Cantidad">
-  </mat-form-field>
-
-  <mat-form-field appearance="fill">
   <mat-label>Instrumento</mat-label>
   <input matInput [(ngModel)]="Instrumento">
   </mat-form-field>
+
+  <mat-form-field appearance="fill">
+  <mat-label>Cantidad</mat-label>
+  <input matInput type="number" [(ngModel)]="Cantidad">
+  </mat-form-field>  
 
   <mat-form-field appearance="fill">
   <mat-label>Precio</mat-label>
   <input matInput type="number" [(ngModel)]="Precio">
   </mat-form-field>
 
-  <mat-radio-group [(ngModel)]="Moneda" name="Moneda">
-  <mat-radio-button value="Sol">Soles</mat-radio-button>
-  <mat-radio-button value="Dolar">Dolares</mat-radio-button>
+  <mat-form-field appearance="fill">
+  <mat-label>Monto</mat-label>
+  <input
+    matInput
+    type="number"
+    [value]="monto"
+    readonly
+  >
+</mat-form-field>
+
+  <mat-radio-group [(ngModel)]="Mercado" name="Mercado">
+  <mat-radio-button value="Local">Local</mat-radio-button>
+  <mat-radio-button value="Extranjero">Extranjero</mat-radio-button>
   </mat-radio-group>  
 
    <div class="button-container">

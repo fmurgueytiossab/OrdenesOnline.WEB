@@ -18,16 +18,13 @@ validatePassword(correo: string, password: string): Observable<LoginResponse> {
     `${this.url}/validate-password`,
     {
       correo,
-      password
+      password      
     }
   );
 }
 
-
-  getById(id: number) {
-  return this.http.get<Representante>(
-    `${this.url}/${id}`
-  );
+getMe() {
+  return this.http.get<Representante>(`${this.url}/me`);
 }
 
 }

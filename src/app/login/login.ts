@@ -32,8 +32,10 @@ export class LoginComponent {
   ) {}
 
   ngOnInit() {
-  this.correo = localStorage.getItem('correo') ?? '';
-  this.password = localStorage.getItem('password') ?? '';
+  const correoGuardado = localStorage.getItem('correo');
+  if (correoGuardado) {
+    this.correo = correoGuardado;
+  }
 }
 
   login() {
@@ -41,11 +43,8 @@ export class LoginComponent {
       .subscribe({
         next: (response) => {
           if (response.isValid) {
-            // ⚠️ debe llamarse userId (como lo devuelve el backend)
-            localStorage.setItem('userId', response.userId.toString());
-            localStorage.setItem('correo', this.correo);
-            localStorage.setItem('password', this.password);
-            
+            localStorage.setItem('token', response.token);
+            localStorage.setItem('correo', this.correo);  // <--- aquí
             this.router.navigate(['/formulario']);
           } else {
             this.error = 'Credenciales inválidas';

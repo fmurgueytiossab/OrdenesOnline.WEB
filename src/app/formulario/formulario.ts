@@ -11,6 +11,7 @@ import { MatNativeDateModule } from '@angular/material/core';
 import { MatRadioModule } from '@angular/material/radio';
 import { MatCardModule } from '@angular/material/card';
 import { Propuesta } from '../Model/Propuesta';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-pagina-form',
@@ -31,79 +32,79 @@ import { Propuesta } from '../Model/Propuesta';
 })
 export class FormularioComponent implements OnInit {
 
-  // 🔹 Datos del representante
   NombreOperador = '';
   CorreoCorporativo = '';
   Cosabcli = '';
 
-  // 🔹 Datos del formulario
   Tipo = '';
   Cantidad: number | null = null;
   Instrumento = '';
   Precio: number | null = null;
-  Moneda = '';
+  Mercado = '';
+  
+  bloqueado: boolean = false;
 
-  bloqueado = false;
+  get monto(): number {
+  return (this.Cantidad || 0) * (this.Precio || 0);
+}
 
   constructor(
     private representanteService: RepresentanteService,
     private propuestaService: PropuestaService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private router: Router
   ) {}
 
   ngOnInit(): void {
-  const userId = localStorage.getItem('userId');
+    
+    // 🚨 Si no hay token → login
+    const token = localStorage.getItem('token');
+    if (!token) {
+      this.router.navigate(['/login']);
+      return;
+    }
 
-  if (!userId) {
-    console.error('No hay userId en localStorage');
-    return;
+    // ✅ El backend sabe quién eres por el token
+    this.representanteService.getMe()
+      .subscribe({
+        next: (rep) => {
+          this.NombreOperador = rep.nombre;
+          this.CorreoCorporativo = rep.correoCorporativo;
+          this.Cosabcli = rep.cosabcli;
+
+          this.cdr.detectChanges();
+        },
+        error: (err) => {
+          if (err.status === 401) {
+            localStorage.removeItem('token');
+            this.router.navigate(['/login']);
+          }
+        }
+      });
   }
-
-  this.representanteService.getById(Number(userId))
-    .subscribe({
-      next: (rep) => {
-        console.log('Representante cargado:', rep);
-
-        // ⚠️ nombres EXACTOS como vienen del backend
-        this.NombreOperador = rep.nombre;
-        this.CorreoCorporativo = rep.correoCorporativo;
-        this.Cosabcli = rep.cosabcli;
-
-        // 🔴 ESTO ES LA CLAVE
-        this.cdr.detectChanges();
-      },
-      error: (err) => {
-        console.error('Error cargando representante', err);
-      }
-    });
-}
-
 
   grabar(): void {
 
-  if (this.Cantidad === null || this.Precio === null) {
-    alert('Cantidad y Precio son obligatorios');
-    return;
+    if (this.Cantidad === null || this.Precio === null) {
+      alert('Cantidad y Precio son obligatorios');
+      return;
+    }
+
+    const propuesta: Propuesta = {
+      NombreOperador: this.NombreOperador,
+      CorreoCorporativo: this.CorreoCorporativo,
+      Cosabcli: this.Cosabcli,
+      Tipo: this.Tipo,
+      Cantidad: this.Cantidad,
+      Instrumento: this.Instrumento,
+      Precio: this.Precio,
+      Mercado: this.Mercado
+    };
+
+    this.propuestaService.registrar(propuesta)
+      .subscribe({
+        next: () => alert('Propuesta enviada correctamente'),
+        error: () => alert('Error al enviar la propuesta')
+      });
   }
-
-  const propuesta: Propuesta = {
-    NombreOperador: this.NombreOperador,
-    CorreoCorporativo: this.CorreoCorporativo,
-    Cosabcli: this.Cosabcli,
-    Tipo: this.Tipo,
-    Cantidad: this.Cantidad,
-    Instrumento: this.Instrumento,
-    Precio: this.Precio,
-    Moneda: this.Moneda
-  };
-
-  console.log(propuesta)
-
-  this.propuestaService.registrar(propuesta)
-    .subscribe({
-      next: () => alert('Propuesta enviada correctamente'),
-      error: () => alert('Error al enviar la propuesta')
-    });
-}
-
 }

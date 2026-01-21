@@ -6,5 +6,5 @@ export interface Propuesta {
   Cantidad: number;
   Instrumento: string;
   Precio: number;
-  Moneda: string
+  Mercado: string
 }
