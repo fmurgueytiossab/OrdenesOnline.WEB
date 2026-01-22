@@ -65,44 +65,23 @@ export class FormularioComponent implements OnInit {
     private router: Router
   ) {}
 
-  ngOnInit(): void {
-    
-    // 🚨 Si no hay token → login
-    const token = localStorage.getItem('token');
-    if (!token) {
-      this.router.navigate(['/login']);
-      return;
+ngOnInit(): void {
+  this.representanteService.getMe().subscribe({
+    next: (rep) => {
+      this.NombreOperador = rep.nombre;
+      this.CorreoCorporativo = rep.correoCorporativo;
+      this.Cosabcli = rep.cosabcli;
+      this.cdr.detectChanges();
     }
+  });
 
-    // ✅ El backend sabe quién eres por el token
-    this.representanteService.getMe()
-      .subscribe({
-        next: (rep) => {
-          this.NombreOperador = rep.nombre;
-          this.CorreoCorporativo = rep.correoCorporativo;
-          this.Cosabcli = rep.cosabcli;
-
-          this.cdr.detectChanges();
-        },
-        error: (err) => {
-          if (err.status === 401) {
-            localStorage.removeItem('token');
-            this.router.navigate(['/login']);
-          }
-        }
-      });
-
-    this.valorService.getAll().subscribe({
+  this.valorService.getAll().subscribe({
     next: (data) => {
       this.valores = data;
       this.valoresFiltrados = [];
-    },
-    error: (err) => {
-      console.error(err);
     }
-    });
-
-  }
+  });
+}
 
   grabar(): void {
 
@@ -138,13 +117,13 @@ filtrarValores(texto: string) {
   const filtro = texto.toLowerCase();
 
   this.valoresFiltrados = this.valores.filter(v =>
-    v.desval.toLowerCase().includes(filtro)
+    v.mnemo.toLowerCase().includes(filtro)
   );
 }
 
   validarInstrumento() {
   const existe = this.valores.some(
-    v => v.desval.toLowerCase() === this.Instrumento.toLowerCase()
+    v => v.mnemo.toLowerCase() === this.Instrumento.toLowerCase()
   );
 
   if (!existe) {

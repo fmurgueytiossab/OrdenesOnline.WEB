@@ -1,5 +1,6 @@
 export interface Valor {
   cosabval: number;
-  desval: string;
-  comon: string;  
+  mnemo: string;
+  comon: string;
+  estado: string;
 }
