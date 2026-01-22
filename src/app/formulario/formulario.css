@@ -1,25 +1,68 @@
-.form-container {
+/* Centrado general */
+.page-container {
+  min-height: 100vh;
   display: flex;
-  flex-direction: column;
-  max-width: 300px;  
-  padding: 1%;             /* para que no quede pegado al borde */
-  border-radius: 8px;        /* opcional: esquinas redondeadas */
-}
-.button-container {
-  display: flex;
-  justify-content: flex-end; /* manda el botón a la derecha */
-}
-.titulo-form {
-  font-size: 22px;
-  font-weight: 600;
-  margin-bottom: 15px;
-  text-align: center;
-  border-bottom: 2px solid #3f51b5;
-  padding-bottom: 8px;
-}
-.form-container.disabled {
-  pointer-events: none; /* bloquea clics */
-  filter: blur(3px);    /* opcional */
-  opacity: 0.4;
+  justify-content: center;
+  align-items: flex-start;
+  background: #f4f6f8;
+  padding: 1rem;
 }
 
+/* Tarjeta del formulario */
+.form-container {
+  width: 100%;
+  max-width: 25rem;   /* mejor que 300px */
+  background: #fff;
+  padding: 1.5rem;
+  border-radius: 1rem;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* Título */
+.titulo-form {
+  font-size: 1.5rem;
+  font-weight: 600;
+  text-align: center;
+  margin-bottom: 0.5rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid #3f51b5;
+}
+
+/* Inputs full width */
+mat-form-field {
+  width: 100%;
+}
+
+/* Radios */
+mat-radio-group {
+  display: flex;
+  gap: 1rem;
+}
+
+/* Botón */
+.button-container {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 0.5rem;
+}
+
+/* Estado bloqueado */
+.form-container.disabled {
+  pointer-events: none;
+  opacity: 0.5;
+  filter: blur(2px);
+}
+
+/* Mobile tweaks */
+@media (max-width: 480px) {
+  .form-container {
+    padding: 1rem;
+  }
+
+  .button-container {
+    justify-content: center;
+  }
+}

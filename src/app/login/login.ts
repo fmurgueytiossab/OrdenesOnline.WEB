@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { ChangeDetectorRef, Component } from '@angular/core';
 import { RepresentanteService } from '../services/RepresentanteService';
 import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -6,6 +6,7 @@ import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
+import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-login',
@@ -17,7 +18,8 @@ import { MatButtonModule } from '@angular/material/button';
     MatCardModule,
     MatFormFieldModule,
     MatInputModule,
-    MatButtonModule
+    MatButtonModule,
+    CommonModule
   ]
 })
 export class LoginComponent {
@@ -28,7 +30,8 @@ export class LoginComponent {
 
   constructor(
     private representanteService: RepresentanteService,
-    private router: Router
+    private router: Router,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit() {
@@ -38,21 +41,26 @@ export class LoginComponent {
   }
 }
 
-  login() {
-    this.representanteService.validatePassword(this.correo, this.password)
-      .subscribe({
-        next: (response) => {
-          if (response.isValid) {
-            localStorage.setItem('token', response.token);
-            localStorage.setItem('correo', this.correo);  // <--- aquí
-            this.router.navigate(['/formulario']);
-          } else {
-            this.error = 'Credenciales inválidas';
-          }
-        },
-        error: () => {
-          this.error = 'Error al conectar con el servidor';
+login() {
+  this.error = '';
+
+  this.representanteService
+    .validatePassword(this.correo, this.password)
+    .subscribe({
+      next: (response) => {
+        if (response.isValid) {
+          localStorage.setItem('token', response.token);
+          localStorage.setItem('correo', this.correo);
+          this.router.navigate(['/formulario']);
+        } else {
+          this.error = 'Correo o contraseña inválidos';
+          this.cdr.detectChanges(); // 👈 CLAVE
         }
-      });
-  }
+      },
+      error: () => {
+        this.error = 'Error al conectar con el servidor';
+        this.cdr.detectChanges(); // 👈 TAMBIÉN
+      }
+    });
+}
 }
