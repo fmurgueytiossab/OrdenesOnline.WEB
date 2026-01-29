@@ -8,12 +8,12 @@ import { Propuesta } from '../Model/Propuesta';
 })
 export class PropuestaService {
 
-  private url = 'https://localhost:7213/api/propuesta';
+  private apiUrl = 'https://localhost:7213/api';
 
   constructor(private http: HttpClient) {}
 
   registrar(propuesta: Propuesta) {
-    return this.http.post(this.url, propuesta);
-  }
+  return this.http.post(`${this.apiUrl}/Propuesta`, propuesta);
+}
 
 }

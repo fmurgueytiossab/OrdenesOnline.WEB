@@ -3,6 +3,8 @@ import { FormularioComponent } from './formulario/formulario';
 import { LoginComponent } from './login/login';
 import { AuthGuard } from './Auth/auth.guard';
 import { PruebaComponent } from './prueba/prueba';
+import { ForgotPasswordComponent } from './ForgotPassword/ForgotPassword';
+import { ChangePasswordComponent } from './ChangePassword/ChangePassword';
 
 export const routes: Routes =
  [
@@ -15,5 +17,13 @@ export const routes: Routes =
   { 
     path: 'prueba', 
     component: PruebaComponent   
+  },
+  { 
+    path: 'forgot-password', 
+    component: ForgotPasswordComponent
+  },
+  { 
+    path: 'change-password', 
+    component: ChangePasswordComponent
   }
  ];

@@ -7,6 +7,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { CommonModule } from '@angular/common';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 
 @Component({
   selector: 'app-login',
@@ -19,7 +20,8 @@ import { CommonModule } from '@angular/common';
     MatFormFieldModule,
     MatInputModule,
     MatButtonModule,
-    CommonModule
+    CommonModule,
+     MatSnackBarModule,
   ]
 })
 export class LoginComponent {
@@ -31,7 +33,8 @@ export class LoginComponent {
   constructor(
     private representanteService: RepresentanteService,
     private router: Router,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private snackBar: MatSnackBar
   ) {}
 
   ngOnInit() {
@@ -42,8 +45,6 @@ export class LoginComponent {
 }
 
 login() {
-  this.error = '';
-
   this.representanteService
     .validatePassword(this.correo, this.password)
     .subscribe({
@@ -53,14 +54,27 @@ login() {
           localStorage.setItem('correo', this.correo);
           this.router.navigate(['/formulario']);
         } else {
-          this.error = 'Correo o contraseña inválidos';
-          this.cdr.detectChanges(); // 👈 CLAVE
+          this.snackBar.open('⚠️ Correo o contraseña inválidos', '', {
+            duration: 3000,
+            horizontalPosition: 'center',
+            verticalPosition: 'top',
+            panelClass: ['snack-error'] // puedes definir estilos personalizados en CSS
+          });
         }
       },
       error: () => {
-        this.error = 'Error al conectar con el servidor';
-        this.cdr.detectChanges(); // 👈 TAMBIÉN
+        this.snackBar.open('❌ Error al conectar con el servidor', '', {
+          duration: 3000,
+          horizontalPosition: 'center',
+          verticalPosition: 'top',
+          panelClass: ['snack-error']
+        });
       }
     });
 }
+
+goToForgotPassword() {
+  this.router.navigate(['/forgot-password']);
+}
+
 }

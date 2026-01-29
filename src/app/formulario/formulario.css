@@ -44,9 +44,9 @@ mat-radio-group {
 
 /* Botón */
 .button-container {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: 0.5rem;
+ display: flex;
+  justify-content: space-between; /* separa los elementos a los extremos */
+  margin-top: 1rem; /* opcional, para separar del formulario */
 }
 
 /* Estado bloqueado */
@@ -57,7 +57,7 @@ mat-radio-group {
 }
 
 /* Mobile tweaks */
-@media (max-width: 480px) {
+@media (max-width: 40rem) {
   .form-container {
     padding: 1rem;
   }

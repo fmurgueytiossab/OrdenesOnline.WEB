@@ -9,7 +9,7 @@ import { Observable } from 'rxjs';
 })
 export class ValorService {
 
-  private url = 'https://localhost:7213/api/valor';
+  private url = 'https://10.80.1.15/api/valor';
 
   constructor(private http: HttpClient) {}
 

@@ -1,32 +1,90 @@
+/* Layout general */
 .page-container {
   min-height: 100vh;
   display: flex;
   justify-content: center;
   align-items: center;
-  background: #f4f6f8;
+  background: linear-gradient(135deg, #f4f6f8, #eef1f4);
+  padding: 1rem; /* respiro en mobile */
 }
 
-mat-card-title {
-  display: block;
-  margin-bottom: 1rem;
-  font-size: 1.5rem;
-  font-weight: 600;
-  text-align: center; /* 👈 esto */
-}
-
-
+/* Card */
 .login-card {
   width: 100%;
-  max-width: 25rem;
-  padding: 1rem;
-  border-radius: 1rem;
+  max-width: 380px;
+  padding: 1.75rem 1.5rem;
+  border-radius: 18px;
+  background-color: #ffffff;
+  box-shadow:
+    0 10px 20px rgba(0, 0, 0, 0.08),
+    0 4px 8px rgba(0, 0, 0, 0.04);
 }
 
+/* Título */
+mat-card-title {
+  display: block;
+  margin-bottom: 1.5rem;
+  font-size: 1.45rem;
+  font-weight: 600;
+  text-align: center;
+  color: #1f2933;
+  letter-spacing: -0.2px;
+}
+
+/* Inputs */
 mat-form-field {
   width: 100%;
+  margin-bottom: 0.85rem;
+}
+
+/* Mensajes */
+.error-message,
+.success-message {
+  font-size: 0.9rem;
+  margin-top: 0.5rem;
+  line-height: 1.4;
 }
 
 .error-message {
   color: #d32f2f;
-  font-size: 1rem;  
+}
+
+.success-message {
+  color: #2e7d32;
+}
+
+/* Acciones */
+mat-card-actions {
+  padding-top: 0.75rem;
+}
+
+/* Forgot password / acción secundaria */
+.forgot-password {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 0.25rem;
+}
+
+.forgot-password button {
+  font-size: 0.85rem;
+  padding: 0;
+}
+
+/* Botón principal */
+.primary-button {
+  min-width: 120px;
+  height: 40px;
+  border-radius: 20px;
+}
+
+.forgot-link {
+  font-size: 0.9rem;
+  color: #2563eb; /* azul tipo link */
+  text-decoration: underline;
+  cursor: pointer;
+  margin-right: auto; /* para que quede alineado a la izquierda si quieres */
+}
+
+.forgot-link:hover {
+  color: #1d4ed8;
 }

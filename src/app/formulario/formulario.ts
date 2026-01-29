@@ -9,6 +9,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatRadioModule } from '@angular/material/radio';
 import { MatCardModule } from '@angular/material/card';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 
 import { RepresentanteService } from '../services/RepresentanteService';
 import { PropuestaService } from '../services/PropuestaService';
@@ -30,7 +31,8 @@ import { Valor } from '../Model/Valor';
     MatButtonModule,
     MatRadioModule,
     MatCardModule,
-    MatAutocompleteModule
+    MatAutocompleteModule,
+    MatSnackBarModule
   ]
 })
 export class FormularioComponent implements OnInit {
@@ -48,14 +50,15 @@ export class FormularioComponent implements OnInit {
   valores: Valor[] = [];
   valoresFiltrados: Valor[] = [];
 
-  bloqueado = false;
+  bloqueado = false; // controla si los inputs y el botón están deshabilitados
 
   constructor(
     private representanteService: RepresentanteService,
     private propuestaService: PropuestaService,
     private valorService: ValorService,
     private cdr: ChangeDetectorRef,
-    private router: Router
+    private router: Router,
+    private snackBar: MatSnackBar
   ) {}
 
   ngOnInit(): void {
@@ -78,12 +81,8 @@ export class FormularioComponent implements OnInit {
 
   // 👉 Monto con máximo 2 decimales
   get monto(): number {
-    if (this.Cantidad === null || this.Precio === null) {
-      return 0;
-    }
-
-    const monto = this.Cantidad * this.Precio;
-    return Number(monto.toFixed(2));
+    if (this.Cantidad === null || this.Precio === null) return 0;
+    return Number((this.Cantidad * this.Precio).toFixed(2));
   }
 
   // 👉 Precio con máximo 6 decimales
@@ -92,27 +91,28 @@ export class FormularioComponent implements OnInit {
       this.Precio = null;
       return;
     }
-
     this.Precio = Number(valor.toFixed(6));
   }
 
   grabar(): void {
-
-    // Validar campos obligatorios
-    if (
-      !this.Tipo ||
-      !this.Instrumento ||
-      this.Cantidad === null ||
-      this.Precio === null ||
-      !this.Mercado
-    ) {
-      alert('Debe completar todos los campos obligatorios');
+    // Validaciones
+    if (!this.Tipo || !this.Instrumento || this.Cantidad === null || this.Precio === null || !this.Mercado) {
+      this.snackBar.open('⚠️ Complete todos los campos obligatorios', '', {
+        duration: 3000,
+        horizontalPosition: 'center',
+        verticalPosition: 'top',
+        panelClass: ['snack-error']
+      });
       return;
     }
 
-    // Validar valores positivos
     if (this.Cantidad <= 0 || this.Precio <= 0) {
-      alert('Cantidad y Precio deben ser mayores a cero');
+      this.snackBar.open('⚠️ Cantidad y Precio deben ser mayores a cero', '', {
+        duration: 3000,
+        horizontalPosition: 'center',
+        verticalPosition: 'top',
+        panelClass: ['snack-error']
+      });
       return;
     }
 
@@ -127,10 +127,46 @@ export class FormularioComponent implements OnInit {
       Mercado: this.Mercado
     };
 
+    // Bloqueamos inputs y botón temporalmente
+    this.bloqueado = true;
+
     this.propuestaService.registrar(propuesta).subscribe({
-      next: () => alert('Propuesta enviada correctamente'),
-      error: () => alert('Error al enviar la propuesta')
+      next: () => {
+        const snack = this.snackBar.open('✅ Propuesta enviada correctamente', '', {
+          duration: 4000,
+          horizontalPosition: 'center',
+          verticalPosition: 'top',
+          panelClass: ['snack-success']
+        });
+
+        snack.afterDismissed().subscribe(() => {
+          this.limpiarFormulario();
+        });
+      },
+      error: () => {
+        const snack = this.snackBar.open('❌ Error al enviar la propuesta', '', {
+          duration: 4000,
+          horizontalPosition: 'center',
+          verticalPosition: 'top',
+          panelClass: ['snack-error']
+        });
+        snack.afterDismissed().subscribe(() => {
+          this.bloqueado = false; // desbloqueamos si hubo error
+        });
+      }
     });
+  }
+
+  limpiarFormulario(): void {
+    this.Tipo = '';
+    this.Cantidad = null;
+    this.Instrumento = '';
+    this.Precio = null;
+    this.Mercado = '';
+    this.valoresFiltrados = [];
+    this.bloqueado = false; // desbloquea todo
+
+    this.cdr.detectChanges();
   }
 
   filtrarValores(texto: string): void {
@@ -138,22 +174,13 @@ export class FormularioComponent implements OnInit {
       this.valoresFiltrados = [];
       return;
     }
-
     const filtro = texto.toLowerCase();
-
-    this.valoresFiltrados = this.valores.filter(v =>
-      v.mnemo.toLowerCase().includes(filtro)
-    );
+    this.valoresFiltrados = this.valores.filter(v => v.mnemo.toLowerCase().includes(filtro));
   }
 
   validarInstrumento(): void {
-    const existe = this.valores.some(
-      v => v.mnemo.toLowerCase() === this.Instrumento.toLowerCase()
-    );
-
-    if (!existe) {
-      this.Instrumento = '';
-    }
+    const existe = this.valores.some(v => v.mnemo.toLowerCase() === this.Instrumento.toLowerCase());
+    if (!existe) this.Instrumento = '';
   }
 
   onInstrumentoSeleccionado(valor: string): void {
@@ -164,4 +191,8 @@ export class FormularioComponent implements OnInit {
   onInstrumentoFocus(): void {
     this.valoresFiltrados = [];
   }
+  volverLogin() {
+    this.router.navigate(['/']);
+  }
+  
 }

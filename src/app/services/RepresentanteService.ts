@@ -9,22 +9,25 @@ import { LoginResponse } from '../Model/LoginResponse';
 })
 export class RepresentanteService {
 
-  private url = 'https://localhost:7213/api/Representante';
+  private apiUrl = 'https://localhost:7213/api';
 
   constructor(private http: HttpClient) {}
 
 validatePassword(correo: string, password: string): Observable<LoginResponse> {
   return this.http.post<LoginResponse>(
-    `${this.url}/validate-password`,
-    {
-      correo,
-      password      
-    }
+    `${this.apiUrl}/Representante/validate-password`,
+    { correo, password }
   );
 }
 
-getMe() {
-  return this.http.get<Representante>(`${this.url}/me`);
-}
+  getMe(): Observable<Representante> {
+    return this.http.get<Representante>(`${this.apiUrl}/Representante/me`);
+  }
 
+  updatePassword(token: string, password: string): Observable<any> {
+    return this.http.post(
+      `${this.apiUrl}/Representante/update-password`,
+      { token, password }
+    );
+  }
 }
