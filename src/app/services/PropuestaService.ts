@@ -8,7 +8,7 @@ import { Propuesta } from '../Model/Propuesta';
 })
 export class PropuestaService {
 
-  private apiUrl = 'https://localhost:7213/api';
+  private apiUrl = 'https://10.80.1.15/api';
 
   constructor(private http: HttpClient) {}
 

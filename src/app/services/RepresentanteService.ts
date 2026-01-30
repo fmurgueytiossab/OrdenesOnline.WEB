@@ -9,7 +9,7 @@ import { LoginResponse } from '../Model/LoginResponse';
 })
 export class RepresentanteService {
 
-  private apiUrl = 'https://localhost:7213/api';
+  private apiUrl = 'https://10.80.1.15/api';
 
   constructor(private http: HttpClient) {}
 
