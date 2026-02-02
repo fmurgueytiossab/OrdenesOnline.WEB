@@ -49,6 +49,16 @@ mat-radio-group {
   margin-top: 1rem; /* opcional, para separar del formulario */
 }
 
+.precio-container{
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.precio-field{
+  flex: 1;
+}
+
 /* Estado bloqueado */
 .form-container.disabled {
   pointer-events: none;

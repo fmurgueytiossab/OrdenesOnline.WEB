@@ -37,12 +37,13 @@
       <a class="forgot-link" (click)="goToForgotPassword()">¿Olvidaste tu contraseña?</a>
 
       <button
-        mat-raised-button
-        color="primary"
-        class="primary-button"
-        (click)="login()">
-        Ingresar
-      </button>
+  mat-raised-button
+  color="primary"
+  class="primary-button"
+  (click)="login()"
+  [disabled]="isBlocked">
+  Ingresar
+</button>
     </mat-card-actions>
 
   </mat-card>

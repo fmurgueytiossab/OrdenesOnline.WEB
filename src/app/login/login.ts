@@ -29,6 +29,7 @@ export class LoginComponent {
   correo = '';
   password = '';
   error = '';
+  isBlocked = false;
 
   constructor(
     private representanteService: RepresentanteService,
@@ -45,6 +46,13 @@ export class LoginComponent {
 }
 
 login() {
+
+  if (this.isBlocked) {
+    return;
+  }
+
+  this.isBlocked = true;
+
   this.representanteService
     .validatePassword(this.correo, this.password)
     .subscribe({
@@ -54,24 +62,34 @@ login() {
           localStorage.setItem('correo', this.correo);
           this.router.navigate(['/formulario']);
         } else {
-          this.snackBar.open('⚠️ Correo o contraseña inválidos', '', {
-            duration: 3000,
-            horizontalPosition: 'center',
-            verticalPosition: 'top',
-            panelClass: ['snack-error'] // puedes definir estilos personalizados en CSS
-          });
+          this.showError('⚠️ Correo o contraseña inválidos');
         }
+        this.unblockAfterDelay();
       },
       error: () => {
-        this.snackBar.open('❌ Error al conectar con el servidor', '', {
-          duration: 3000,
-          horizontalPosition: 'center',
-          verticalPosition: 'top',
-          panelClass: ['snack-error']
-        });
+        this.showError('❌ Error al conectar con el servidor');
+        this.unblockAfterDelay();
       }
     });
 }
+
+private unblockAfterDelay() {
+  setTimeout(() => {
+    this.isBlocked = false;
+    this.cdr.detectChanges(); // ← aquí
+  }, 3000);
+}
+
+private showError(message: string) {
+  this.snackBar.open(message, '', {
+    duration: 3000,
+    horizontalPosition: 'center',
+    verticalPosition: 'top',
+    panelClass: ['snack-error']
+  });
+}
+
+
 
 goToForgotPassword() {
   this.router.navigate(['/forgot-password']);

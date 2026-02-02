@@ -5,6 +5,8 @@ export interface Propuesta {
   Tipo: string;
   Cantidad: number;
   Instrumento: string;
-  Precio: number;
-  Mercado: string
+  TipoOrden: string;
+  Precio: number | null;
+  Mercado: string;
+  Moneda: string;
 }

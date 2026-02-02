@@ -9,12 +9,13 @@ import { Observable } from 'rxjs';
 })
 export class ValorService {
 
-  private url = 'https://10.80.1.15/api/valor';
+  private apiUrl = 'https://10.80.1.15/api';
+  //private apiUrl = 'https://localhost:7213/api/valor';
 
   constructor(private http: HttpClient) {}
 
   getAll(): Observable<Valor[]> {
-    return this.http.get<Valor[]>(this.url);
+    return this.http.get<Valor[]>(this.apiUrl);
   }
 
 }

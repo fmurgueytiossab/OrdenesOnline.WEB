@@ -10,6 +10,7 @@ import { MatRadioModule } from '@angular/material/radio';
 import { MatCardModule } from '@angular/material/card';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatCheckboxModule } from '@angular/material/checkbox';
 
 import { RepresentanteService } from '../services/RepresentanteService';
 import { PropuestaService } from '../services/PropuestaService';
@@ -32,7 +33,8 @@ import { Valor } from '../Model/Valor';
     MatRadioModule,
     MatCardModule,
     MatAutocompleteModule,
-    MatSnackBarModule
+    MatSnackBarModule,
+    MatCheckboxModule
   ]
 })
 export class FormularioComponent implements OnInit {
@@ -44,13 +46,19 @@ export class FormularioComponent implements OnInit {
   Tipo = '';
   Cantidad: number | null = null;
   Instrumento = '';
+
+  esAMercado = false;
+  TipoOrden = "Limite"
   Precio: number | null = null;
   Mercado = '';
+
+  Moneda = '';              // 01 / 02
+  DescripcionMoneda = '';   // Soles / Dólares
 
   valores: Valor[] = [];
   valoresFiltrados: Valor[] = [];
 
-  bloqueado = false; // controla si los inputs y el botón están deshabilitados
+  bloqueado = false;
 
   constructor(
     private representanteService: RepresentanteService,
@@ -95,8 +103,7 @@ export class FormularioComponent implements OnInit {
   }
 
   grabar(): void {
-    // Validaciones
-    if (!this.Tipo || !this.Instrumento || this.Cantidad === null || this.Precio === null || !this.Mercado) {
+    if (!this.Tipo || !this.Instrumento || this.Cantidad === null || (!this.esAMercado && this.Precio === null) || !this.Mercado){
       this.snackBar.open('⚠️ Complete todos los campos obligatorios', '', {
         duration: 3000,
         horizontalPosition: 'center',
@@ -106,7 +113,7 @@ export class FormularioComponent implements OnInit {
       return;
     }
 
-    if (this.Cantidad <= 0 || this.Precio <= 0) {
+    if (this.Cantidad <= 0 || (!this.esAMercado && (this.Precio ?? 0) <= 0)) {
       this.snackBar.open('⚠️ Cantidad y Precio deben ser mayores a cero', '', {
         duration: 3000,
         horizontalPosition: 'center',
@@ -123,11 +130,12 @@ export class FormularioComponent implements OnInit {
       Tipo: this.Tipo,
       Cantidad: this.Cantidad,
       Instrumento: this.Instrumento,
+      TipoOrden: this.TipoOrden,
       Precio: this.Precio,
-      Mercado: this.Mercado
+      Mercado: this.Mercado,
+      Moneda: this.DescripcionMoneda
     };
 
-    // Bloqueamos inputs y botón temporalmente
     this.bloqueado = true;
 
     this.propuestaService.registrar(propuesta).subscribe({
@@ -150,8 +158,9 @@ export class FormularioComponent implements OnInit {
           verticalPosition: 'top',
           panelClass: ['snack-error']
         });
+
         snack.afterDismissed().subscribe(() => {
-          this.bloqueado = false; // desbloqueamos si hubo error
+          this.bloqueado = false;
         });
       }
     });
@@ -163,8 +172,10 @@ export class FormularioComponent implements OnInit {
     this.Instrumento = '';
     this.Precio = null;
     this.Mercado = '';
+    this.Moneda = '';
+    this.DescripcionMoneda = '';
     this.valoresFiltrados = [];
-    this.bloqueado = false; // desbloquea todo
+    this.bloqueado = false;
 
     this.cdr.detectChanges();
   }
@@ -175,24 +186,55 @@ export class FormularioComponent implements OnInit {
       return;
     }
     const filtro = texto.toLowerCase();
-    this.valoresFiltrados = this.valores.filter(v => v.mnemo.toLowerCase().includes(filtro));
+    this.valoresFiltrados = this.valores.filter(v =>
+      v.mnemo.toLowerCase().includes(filtro)
+    );
   }
 
   validarInstrumento(): void {
-    const existe = this.valores.some(v => v.mnemo.toLowerCase() === this.Instrumento.toLowerCase());
-    if (!existe) this.Instrumento = '';
+    const existe = this.valores.some(v =>
+      v.mnemo.toLowerCase() === this.Instrumento.toLowerCase()
+    );
+    if (!existe) {
+      this.Instrumento = '';
+      this.Moneda = '';
+      this.DescripcionMoneda = '';
+    }
   }
 
-  onInstrumentoSeleccionado(valor: string): void {
-    this.Instrumento = valor;
+  onInstrumentoSeleccionado(mnemo: string): void {
+    this.Instrumento = mnemo;
     this.valoresFiltrados = [];
+
+    const seleccionado = this.valores.find(v => v.mnemo === mnemo);
+
+    if (seleccionado) {
+      this.Moneda = seleccionado.comon;
+
+      if (this.Moneda === '01') {
+        this.DescripcionMoneda = 'Soles';
+      } else if (this.Moneda === '02') {
+        this.DescripcionMoneda = 'Dólares';
+      } else {
+        this.DescripcionMoneda = '';
+      }
+    }
   }
 
   onInstrumentoFocus(): void {
     this.valoresFiltrados = [];
   }
-  volverLogin() {
+
+  volverLogin(): void {
     this.router.navigate(['/']);
   }
-  
+
+  onTipoOrdenChange(): void {
+  if (this.esAMercado) {
+    this.TipoOrden = 'A Mercado';
+    this.Precio = null;
+  } else {
+    this.TipoOrden = 'Limite';
+  }
+}
 }
