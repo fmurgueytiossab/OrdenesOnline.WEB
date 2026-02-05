@@ -1,78 +1,90 @@
-/* Centrado general */
 .page-container {
-  min-height: 100vh;
+  height: auto;
   display: flex;
   justify-content: center;
-  align-items: flex-start;
   background: #f4f6f8;
-  padding: 1rem;
+  padding: 2rem 1rem 1rem;
 }
 
-/* Tarjeta del formulario */
 .form-container {
   width: 100%;
-  max-width: 25rem;   /* mejor que 300px */
+  max-width: 60rem;
   background: #fff;
-  padding: 1.5rem;
+  padding: 1.2rem 1.5rem;
   border-radius: 1rem;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 0.6rem 1.8rem rgba(0,0,0,0.08);
   display: flex;
   flex-direction: column;
+  gap: 0.6rem;
+}
+
+/* Header */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.4rem;
+}
+
+/* Filas */
+.row {
+  display: grid;
   gap: 1rem;
+  align-items: center;
 }
 
-/* Título */
-.titulo-form {
-  font-size: 1.5rem;
-  font-weight: 600;
-  text-align: center;
-  margin-bottom: 0.5rem;
-  padding-bottom: 0.5rem;
-  border-bottom: 2px solid #3f51b5;
-}
+.row.one   { grid-template-columns: 1fr; }
+.row.two   { grid-template-columns: 1fr 1fr; }
+.row.three { grid-template-columns: 1fr 1fr 1fr; }
 
-/* Inputs full width */
+/* Angular Material compacto real */
 mat-form-field {
   width: 100%;
+  margin: 0;
 }
 
-/* Radios */
+/* radios más compactos */
 mat-radio-group {
   display: flex;
-  gap: 1rem;
+  gap: 1.5rem;  
 }
 
-/* Botón */
-.button-container {
- display: flex;
-  justify-content: space-between; /* separa los elementos a los extremos */
-  margin-top: 1rem; /* opcional, para separar del formulario */
-}
-
-.precio-container{
+/* checkbox alineado con inputs */
+.center {
   display: flex;
   align-items: center;
+  height: 2.75rem;
+}
+
+/* Botones pegados al form */
+.button-container {
+  display: flex;
+  justify-content: space-between;
   gap: 1rem;
+  margin-top: 0.3rem;
 }
 
-.precio-field{
-  flex: 1;
-}
-
-/* Estado bloqueado */
-.form-container.disabled {
-  pointer-events: none;
-  opacity: 0.5;
-  filter: blur(2px);
-}
-
-/* Mobile tweaks */
-@media (max-width: 40rem) {
-  .form-container {
-    padding: 1rem;
+/* Responsive */
+@media (max-width: 48rem) {
+  .row.two,
+  .row.three {
+    grid-template-columns: 1fr;
   }
+}
+.readonly-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
 
-  .button-container {
-    justify-content: center;
-  }
+.readonly-field label {
+  font-size: 1rem;
+  color: #666;
+}
+
+.readonly-field .value {
+  padding: 1rem 1rem;
+  background: #f5f5f5;
+  border-radius: 0.25rem;
+  font-weight: 500;
 }

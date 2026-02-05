@@ -39,6 +39,7 @@ export class LoginComponent {
   ) {}
 
   ngOnInit() {
+    
   const correoGuardado = localStorage.getItem('correo');
   if (correoGuardado) {
     this.correo = correoGuardado;

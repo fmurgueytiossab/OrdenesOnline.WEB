@@ -101,6 +101,9 @@ export class FormularioComponent implements OnInit {
     }
     this.Precio = Number(valor.toFixed(6));
   }
+  cambiarPassword(){
+    this.router.navigate(['/change-password']);
+  }
 
   grabar(): void {
     if (!this.Tipo || !this.Instrumento || this.Cantidad === null || (!this.esAMercado && this.Precio === null) || !this.Mercado){

@@ -2,6 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Valor } from '../Model/Valor';
 import { Observable } from 'rxjs';
+import { environment } from '../../environments/environment';
 
 
 @Injectable({
@@ -9,8 +10,7 @@ import { Observable } from 'rxjs';
 })
 export class ValorService {
 
-  private apiUrl = 'https://10.80.1.15/api/valor';
-  //private apiUrl = 'https://localhost:7213/api/valor';
+  private apiUrl = environment.apiUrl;
 
   constructor(private http: HttpClient) {}
 

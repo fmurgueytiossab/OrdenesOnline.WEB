@@ -1,89 +1,98 @@
 <div class="page-container">
   <div class="form-container">
 
-    <h2 class="titulo-form">Envio de propuestas</h2>
+    <div class="header">
+      <h2 class="titulo-form">Registro de propuestas</h2>
+      <button mat-stroked-button type="button" (click)="cambiarPassword()">
+        Cambiar contraseña
+      </button>
+    </div>
 
-    <mat-form-field appearance="fill">
-      <mat-label>Nombre del operador</mat-label>
-      <input matInput [(ngModel)]="NombreOperador" readonly>
-    </mat-form-field>
-
-    <mat-form-field appearance="fill">
-      <mat-label>Correo corporativo</mat-label>
-      <input matInput [(ngModel)]="CorreoCorporativo" readonly>
-    </mat-form-field>
-
-    <mat-form-field appearance="fill">
-      <mat-label>Cosabcli</mat-label>
-      <input matInput [(ngModel)]="Cosabcli" readonly>
-    </mat-form-field>
-
-    <mat-radio-group [(ngModel)]="Tipo" name="Tipo" [disabled]="bloqueado">
-      <mat-radio-button value="compra">Compra</mat-radio-button>
-      <mat-radio-button value="venta">Venta</mat-radio-button>
-    </mat-radio-group>
-
-    <mat-form-field appearance="fill">
-      <mat-label>Instrumento</mat-label>
-      <input matInput [(ngModel)]="Instrumento"
-             (ngModelChange)="filtrarValores($event)"
-             (focus)="onInstrumentoFocus()"
-             (blur)="validarInstrumento()"
-             [matAutocomplete]="auto"
-             [readonly]="bloqueado">
-      <mat-autocomplete #auto="matAutocomplete" (optionSelected)="onInstrumentoSeleccionado($event.option.value)">
-        <mat-option *ngFor="let v of valoresFiltrados" [value]="v.mnemo">{{ v.mnemo }}</mat-option>
-      </mat-autocomplete>
-    </mat-form-field>
-
-    <mat-form-field appearance="fill">
-      <mat-label>Moneda</mat-label>
-        <input matInput [value]="DescripcionMoneda" readonly>
-    </mat-form-field>
-
-    <mat-form-field appearance="fill">
-      <mat-label>Cantidad</mat-label>
-      <input matInput type="number" [(ngModel)]="Cantidad" [readonly]="bloqueado">
-    </mat-form-field>
-
-    <div class="precio-container">
-
-  <mat-form-field appearance="fill" class="precio-field">
-    <mat-label>Precio</mat-label>
-    <input matInput
-           type="number"
-           step="0.001"
-           [(ngModel)]="Precio"
-           (ngModelChange)="validarPrecio($event)"
-           [disabled]="bloqueado || esAMercado">
-  </mat-form-field>
-
-  <mat-checkbox
-      [(ngModel)]="esAMercado"
-      (change)="onTipoOrdenChange()"
-      [disabled]="bloqueado">
-    A mercado
-  </mat-checkbox>
-
+    <!-- FILA 1 -->
+    <div class="row three">
+      <div class="readonly-field">
+  <label>Nombre del operador</label>
+  <div class="value">{{ NombreOperador }}</div>
 </div>
 
-    <mat-form-field appearance="fill">
-      <mat-label>Monto</mat-label>
-      <input matInput type="number" [value]="monto" [readonly]="true">
-    </mat-form-field>
+      <div class="readonly-field">
+  <label>Correo corporativo</label>
+  <div class="value">{{ CorreoCorporativo }}</div>
+</div>
 
-    <mat-radio-group [(ngModel)]="Mercado" name="Mercado" [disabled]="bloqueado">
-      <mat-radio-button value="Local">Local</mat-radio-button>
-      <mat-radio-button value="Extranjero">Extranjero</mat-radio-button>
-    </mat-radio-group>
+      <div class="readonly-field">
+  <label>Código de cliente</label>
+  <div class="value">{{ Cosabcli }}</div>
+</div>
+    </div>
+
+    <!-- FILA 2 -->
+    <div class="row two">
+      <mat-radio-group [(ngModel)]="Tipo" [disabled]="bloqueado">
+        <mat-radio-button value="compra">Compra</mat-radio-button>
+        <mat-radio-button value="venta">Venta</mat-radio-button>
+      </mat-radio-group>
+
+      <mat-radio-group [(ngModel)]="Mercado" [disabled]="bloqueado">
+        <mat-radio-button value="Local">Local</mat-radio-button>
+        <mat-radio-button value="Extranjero">Extranjero</mat-radio-button>
+      </mat-radio-group>
+    </div>
+
+    <!-- FILA 3 -->
+    <div class="row two">
+      <mat-form-field appearance="fill">
+        <mat-label>Instrumento</mat-label>
+        <input matInput [(ngModel)]="Instrumento"
+               (ngModelChange)="filtrarValores($event)"
+               [matAutocomplete]="auto">
+        <mat-autocomplete #auto="matAutocomplete"
+          (optionSelected)="onInstrumentoSeleccionado($event.option.value)">
+          <mat-option *ngFor="let v of valoresFiltrados" [value]="v.mnemo">
+            {{ v.mnemo }}
+          </mat-option>
+        </mat-autocomplete>
+      </mat-form-field>
+
+      <mat-form-field appearance="fill">
+        <mat-label>Moneda</mat-label>
+        <input matInput [value]="DescripcionMoneda" readonly>
+      </mat-form-field>
+    </div>
+
+    <!-- FILA 4 -->
+    <div class="row three">
+      <mat-form-field appearance="fill">
+        <mat-label>Cantidad</mat-label>
+        <input matInput type="number" [(ngModel)]="Cantidad">
+      </mat-form-field>
+
+      <mat-form-field appearance="fill">
+        <mat-label>Precio</mat-label>
+        <input matInput type="number" step="0.001"
+               [(ngModel)]="Precio"
+               [disabled]="esAMercado">
+      </mat-form-field>
+
+      <mat-checkbox [(ngModel)]="esAMercado" class="center">
+        A mercado
+      </mat-checkbox>
+    </div>
+
+    <!-- FILA 5 -->
+    <div class="row one">
+      <mat-form-field appearance="fill">
+        <mat-label>Monto</mat-label>
+        <input matInput [value]="monto" readonly>
+      </mat-form-field>
+    </div>
 
     <div class="button-container">
-
-      <button mat-raised-button type="button" (click)="volverLogin()">
+      <button mat-stroked-button type="button" (click)="volverLogin()">
         Volver
       </button>
 
-      <button mat-raised-button color="primary" type="button" (click)="grabar()" [disabled]="bloqueado">
+      <button mat-raised-button color="primary" type="button" (click)="grabar()">
         Grabar
       </button>
     </div>

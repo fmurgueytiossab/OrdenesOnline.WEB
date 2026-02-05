@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
@@ -7,8 +7,14 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { RepresentanteService } from '../services/RepresentanteService';
-import { EmailService } from '../services/EmailService';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { jwtDecode } from 'jwt-decode';
+
+type TokenClaims = {
+  email: string;
+  nameid: string;
+  exp: number;
+};
 
 @Component({
   selector: 'ChangePassword',
@@ -22,10 +28,10 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
     MatFormFieldModule,
     MatInputModule,
     MatButtonModule,
-    MatSnackBarModule 
+    MatSnackBarModule
   ]
 })
-export class ChangePasswordComponent {
+export class ChangePasswordComponent implements OnInit {
 
   token = '';
   tokenInvalido = false;
@@ -34,15 +40,13 @@ export class ChangePasswordComponent {
   password = '';
   confirmPassword = '';
 
-  loading = true; // evitar mostrar formulario hasta validar
+  loading = true;
   cambioExitoso = false;
 
-  mensaje = ''; // mensaje de éxito para el div
-  error = '';   // mensaje de error para Snackbar
+  fromEmail = false;
 
   constructor(
     private representanteService: RepresentanteService,
-    private emailService : EmailService,
     private route: ActivatedRoute,
     private router: Router,
     private cdr: ChangeDetectorRef,
@@ -50,33 +54,43 @@ export class ChangePasswordComponent {
   ) {}
 
   ngOnInit(): void {
-    this.token = this.route.snapshot.queryParamMap.get('token') ?? '';
+    const tokenUrl = this.route.snapshot.queryParamMap.get('token');
+    const tokenLocal = localStorage.getItem('token');
 
-    if (!this.token) {
+    if (tokenUrl) {
+      this.fromEmail = true;
+      this.token = tokenUrl;
+    } else if (tokenLocal) {
+      this.fromEmail = false;
+      this.token = tokenLocal;
+    } else {
       this.tokenInvalido = true;
       this.loading = false;
-      this.cdr.detectChanges();
       return;
     }
 
-    this.emailService.validatePasswordToken(this.token).subscribe({
-      next: (res) => {
-        this.correo = res.email;
-        this.loading = false;
-        this.cdr.detectChanges();
-      },
-      error: () => {
+    try {
+      const decoded = jwtDecode<TokenClaims>(this.token);
+
+      if (decoded.exp * 1000 < Date.now()) {
         this.tokenInvalido = true;
         this.loading = false;
-        this.cdr.detectChanges();
+        return;
       }
-    });
+
+      this.correo = decoded.email;
+      this.loading = false;
+
+    } catch {
+      this.tokenInvalido = true;
+      this.loading = false;
+    }
   }
 
   cambiarPassword() {
     if (!this.password || !this.confirmPassword) {
       this.snackBar.open('Debe completar todos los campos', 'Cerrar', {
-        duration: 4000,
+        duration: 3000,
         horizontalPosition: 'center',
         verticalPosition: 'top',
       });
@@ -85,7 +99,7 @@ export class ChangePasswordComponent {
 
     if (this.password !== this.confirmPassword) {
       this.snackBar.open('Las contraseñas no coinciden', 'Cerrar', {
-        duration: 4000,
+        duration: 3000,
         horizontalPosition: 'center',
         verticalPosition: 'top',
       });
@@ -95,13 +109,28 @@ export class ChangePasswordComponent {
     this.representanteService.updatePassword(this.token, this.password)
       .subscribe({
         next: (res: any) => {
+
           if (res.isValid) {
+
             this.cambioExitoso = true;
-            this.mensaje = 'La contraseña se actualizó correctamente';
-            this.cdr.detectChanges(); // ⬅ actualizar la vista
+            this.cdr.detectChanges();
+
+            this.snackBar.open('La contraseña se cambió correctamente', 'Cerrar', {
+              duration: 3000,
+              horizontalPosition: 'center',
+              verticalPosition: 'top',
+            });
+
+            // Si vino desde el correo → redirección automática
+            if (this.fromEmail) {
+              setTimeout(() => {
+                this.router.navigate(['/']);
+              }, 3200);
+            }
+
           } else {
             this.snackBar.open('No se pudo cambiar la contraseña', 'Cerrar', {
-              duration: 4000,
+              duration: 3000,
               horizontalPosition: 'center',
               verticalPosition: 'top',
             });
@@ -109,7 +138,7 @@ export class ChangePasswordComponent {
         },
         error: () => {
           this.snackBar.open('Ocurrió un error al actualizar la contraseña', 'Cerrar', {
-            duration: 4000,
+            duration: 3000,
             horizontalPosition: 'center',
             verticalPosition: 'top',
           });
@@ -117,7 +146,11 @@ export class ChangePasswordComponent {
       });
   }
 
-  volverLogin() {
-    this.router.navigate(['/']);
+  volver() {
+    if (this.fromEmail) {
+      this.router.navigate(['/']);
+    } else {
+      this.router.navigate(['/formulario']);
+    }
   }
 }

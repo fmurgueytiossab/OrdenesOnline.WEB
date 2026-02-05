@@ -3,14 +3,14 @@ import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { Representante } from '../Model/Representante';
 import { LoginResponse } from '../Model/LoginResponse';
+import { environment } from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
 })
 export class RepresentanteService {
 
-  private apiUrl = 'https://10.80.1.15/api';
-  //private apiUrl = 'https://localhost:7213/api';
+  private apiUrl = environment.apiUrl;
 
   constructor(private http: HttpClient) {}
 
