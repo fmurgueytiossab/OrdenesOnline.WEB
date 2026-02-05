@@ -88,10 +88,10 @@ export class FormularioComponent implements OnInit {
   }
 
   // 👉 Monto con máximo 2 decimales
-  get monto(): number {
-    if (this.Cantidad === null || this.Precio === null) return 0;
-    return Number((this.Cantidad * this.Precio).toFixed(2));
-  }
+  get monto(): number | null {
+  if (this.Cantidad === null || this.Precio === null) return null;
+  return Number((this.Cantidad * this.Precio).toFixed(2));
+}
 
   // 👉 Precio con máximo 6 decimales
   validarPrecio(valor: number | null): void {
@@ -113,6 +113,7 @@ export class FormularioComponent implements OnInit {
         verticalPosition: 'top',
         panelClass: ['snack-error']
       });
+      this.cdr.detectChanges();
       return;
     }
 
@@ -234,7 +235,7 @@ export class FormularioComponent implements OnInit {
 
   onTipoOrdenChange(): void {
   if (this.esAMercado) {
-    this.TipoOrden = 'A Mercado';
+    this.TipoOrden = 'Mercado';
     this.Precio = null;
   } else {
     this.TipoOrden = 'Limite';

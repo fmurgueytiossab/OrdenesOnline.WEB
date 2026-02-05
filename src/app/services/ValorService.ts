@@ -15,7 +15,7 @@ export class ValorService {
   constructor(private http: HttpClient) {}
 
   getAll(): Observable<Valor[]> {
-    return this.http.get<Valor[]>(this.apiUrl);
+    return this.http.get<Valor[]>(`${this.apiUrl}/Valor`);;
   }
 
 }
