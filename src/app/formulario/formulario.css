@@ -56,14 +56,6 @@ mat-radio-group {
   height: 2.75rem;
 }
 
-/* Botones pegados al form */
-.button-container {
-  display: flex;
-  justify-content: space-between;
-  gap: 1rem;
-  margin-top: 0.3rem;
-}
-
 /* Responsive */
 @media (max-width: 48rem) {
   .row.two,

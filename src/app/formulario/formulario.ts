@@ -43,14 +43,14 @@ export class FormularioComponent implements OnInit {
   CorreoCorporativo = '';
   Cosabcli = '';
 
-  Tipo = '';
+  Tipo = 'Compra';
   Cantidad: number | null = null;
   Instrumento = '';
 
   esAMercado = false;
   TipoOrden = "Limite"
   Precio: number | null = null;
-  Mercado = '';
+  Mercado = 'Local';
 
   Moneda = '';              // 01 / 02
   DescripcionMoneda = '';   // Soles / Dólares
@@ -171,11 +171,11 @@ export class FormularioComponent implements OnInit {
   }
 
   limpiarFormulario(): void {
-    this.Tipo = '';
+    this.Tipo = 'Compra';
     this.Cantidad = null;
     this.Instrumento = '';
     this.Precio = null;
-    this.Mercado = '';
+    this.Mercado = 'Local';
     this.Moneda = '';
     this.DescripcionMoneda = '';
     this.valoresFiltrados = [];

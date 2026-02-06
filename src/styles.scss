@@ -1,0 +1,39 @@
+/* ====== BOTONES PRIMARY UNIFICADOS ====== */
+button[mat-raised-button][color="primary"],
+button[mat-flat-button][color="primary"] {
+  background-color: #2563eb;
+  color: #ffffff;
+  border-radius: 20px;
+  min-width: 120px;
+  height: 40px;
+}
+
+button[mat-raised-button][color="primary"]:hover,
+button[mat-flat-button][color="primary"]:hover {
+  background-color: #1d4ed8;
+}
+
+button[mat-raised-button][color="primary"][disabled],
+button[mat-flat-button][color="primary"][disabled] {
+  background-color: #93c5fd;
+  color: #ffffff;
+}
+
+/* ====== LINKS TIPO ACCIÓN UNIFICADOS ====== */
+a.action-link {
+  font-size: 0.9rem;
+  color: #2563eb;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+a.action-link:hover {
+  color: #1d4ed8;
+}
+
+mat-card-actions.actions-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}

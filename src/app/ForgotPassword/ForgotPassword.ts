@@ -29,6 +29,7 @@ export class ForgotPasswordComponent {
 
   correo = '';
 
+  enviando = false;        // mientras llama al servicio
   enviadoExitoso = false;
 
   constructor(
@@ -39,7 +40,9 @@ export class ForgotPasswordComponent {
   ) {}
 
 enviar() {
-  // Validación vacía
+
+  if (this.enviando || this.enviadoExitoso) return;
+
   if (!this.correo) {
     this.snackBar.open('⚠️ Debe ingresar un correo electrónico', 'Cerrar', {
       duration: 3000,
@@ -49,35 +52,32 @@ enviar() {
     return;
   }
 
-  // Validación formato básico
   const correoValido = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(this.correo);
-if (!correoValido) {
-  this.snackBar.open('⚠️ Ingrese un correo válido', 'Cerrar', {
-    duration: 3000,
-    horizontalPosition: 'center',
-    verticalPosition: 'top',
-  });
-  return;
-}
-
-  // Evitar reenvío si ya está en proceso o ya se envió
-  if (this.enviadoExitoso) {
+  if (!correoValido) {
+    this.snackBar.open('⚠️ Ingrese un correo válido', 'Cerrar', {
+      duration: 3000,
+      horizontalPosition: 'center',
+      verticalPosition: 'top',
+    });
     return;
   }
 
-  this.emailService.sendPasswordReset(this.correo).subscribe({
-    next: (res: any) => {      
-      this.enviadoExitoso = true;  // bloquea botón     
-      this.cdr.detectChanges();    // fuerza actualización visual
+  this.enviando = true;
 
-      // Mostrar toast
-      const snack = this.snackBar.open(res.mensaje, 'Cerrar', {
+  this.emailService.sendPasswordReset(this.correo).subscribe({
+    next: (res: any) => {
+      this.enviando = false;
+      this.enviadoExitoso = true;
+
+      this.snackBar.open(res.mensaje, 'Cerrar', {
         duration: 4000,
         horizontalPosition: 'center',
         verticalPosition: 'top',
       });
     },
     error: (err) => {
+      this.enviando = false;
+
       this.snackBar.open(err?.error?.mensaje ?? 'Error interno', 'Cerrar', {
         duration: 4000,
         horizontalPosition: 'right',

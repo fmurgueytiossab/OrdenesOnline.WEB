@@ -34,16 +34,15 @@
     <!-- Acciones alineadas -->
     <mat-card-actions class="actions-row">
       
-      <a class="forgot-link" (click)="goToForgotPassword()">¿Olvidó su contraseña?</a>
+      <a class="action-link" (click)="goToForgotPassword()">¿Olvidó su contraseña?</a>
 
       <button
-  mat-raised-button
-  color="primary"
-  class="primary-button"
-  (click)="login()"
-  [disabled]="isBlocked">
-  Ingresar
-</button>
+        mat-raised-button
+        color="primary"
+        (click)="login()"
+        [disabled]="isBlocked">
+        Ingresar
+      </button>
     </mat-card-actions>
 
   </mat-card>

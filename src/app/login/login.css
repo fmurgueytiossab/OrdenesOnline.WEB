@@ -13,7 +13,7 @@
   width: 100%;
   max-width: 380px;
   padding: 1.75rem 1.5rem;
-  border-radius: 18px;
+  border-radius: 1rem;
   background-color: #ffffff;
   box-shadow:
     0 10px 20px rgba(0, 0, 0, 0.08),
@@ -68,23 +68,4 @@ mat-card-actions {
 .forgot-password button {
   font-size: 0.85rem;
   padding: 0;
-}
-
-/* Botón principal */
-.primary-button {
-  min-width: 120px;
-  height: 40px;
-  border-radius: 20px;
-}
-
-.forgot-link {
-  font-size: 0.9rem;
-  color: #2563eb; /* azul tipo link */
-  text-decoration: underline;
-  cursor: pointer;
-  margin-right: auto; /* para que quede alineado a la izquierda si quieres */
-}
-
-.forgot-link:hover {
-  color: #1d4ed8;
 }

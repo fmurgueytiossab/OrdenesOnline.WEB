@@ -2,7 +2,7 @@
   <div class="form-container">
 
     <div class="header">
-      <h2 class="titulo-form">Registro de propuestas</h2>
+      <h2 class="titulo-form">Envío de propuestas</h2>
       <button mat-stroked-button type="button" (click)="cambiarPassword()">
         Cambiar contraseña
       </button>
@@ -57,7 +57,7 @@
 
       <mat-form-field appearance="fill">
         <mat-label>Moneda</mat-label>
-        <input matInput [value]="DescripcionMoneda" readonly>
+        <input matInput [value]="DescripcionMoneda" readonly [disabled]="bloqueado">
       </mat-form-field>
     </div>
 
@@ -88,24 +88,22 @@
     <div class="row one">
       <mat-form-field appearance="fill">
         <mat-label>Monto</mat-label>
-        <input matInput [value]="monto ?? ''" readonly>
+        <input matInput [value]="monto ?? ''" [disabled]="esAMercado || bloqueado">
       </mat-form-field>
     </div>
 
-    <div class="button-container">
-      <button mat-stroked-button type="button" (click)="volverLogin()">
-        Volver
-      </button>
+    <mat-card-actions class="actions-row">
+
+      <a class="action-link" (click)="volverLogin()">Volver</a>
 
       <button
         mat-raised-button
-        color="primary"
-        type="button"
+        color="primary"       
         (click)="grabar()"
         [disabled]="bloqueado">
-        Grabar
+        Enviar
       </button>
-    </div>
+    </mat-card-actions>
 
   </div>
 </div>
