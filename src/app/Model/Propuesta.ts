@@ -9,4 +9,5 @@ export interface Propuesta {
   Precio: number | null;
   Mercado: string;
   Moneda: string;
+  Dni: string;
 }

@@ -4,4 +4,5 @@ export interface Representante {
   password: string;
   nombre: string;
   cosabcli: string;
+  dni: string;
 }

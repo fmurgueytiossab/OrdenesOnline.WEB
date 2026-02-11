@@ -42,6 +42,7 @@ export class FormularioComponent implements OnInit {
   NombreOperador = '';
   CorreoCorporativo = '';
   Cosabcli = '';
+  Dni = '';
 
   Tipo = 'Compra';
   Cantidad: number | null = null;
@@ -75,6 +76,7 @@ export class FormularioComponent implements OnInit {
         this.NombreOperador = rep.nombre;
         this.CorreoCorporativo = rep.correoCorporativo;
         this.Cosabcli = rep.cosabcli;
+        this.Dni = rep.dni;
         this.cdr.detectChanges();
       }
     });
@@ -137,7 +139,8 @@ export class FormularioComponent implements OnInit {
       TipoOrden: this.TipoOrden,
       Precio: this.Precio,
       Mercado: this.Mercado,
-      Moneda: this.DescripcionMoneda
+      Moneda: this.DescripcionMoneda,
+      Dni: this.Dni
     };
 
     this.bloqueado = true;
