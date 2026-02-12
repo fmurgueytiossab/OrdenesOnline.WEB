@@ -18,6 +18,7 @@ import { ValorService } from '../services/ValorService';
 
 import { Propuesta } from '../Model/Propuesta';
 import { Valor } from '../Model/Valor';
+import { finalize, timeout } from 'rxjs';
 
 @Component({
   selector: 'app-pagina-form',
@@ -145,32 +146,33 @@ export class FormularioComponent implements OnInit {
 
     this.bloqueado = true;
 
-    this.propuestaService.registrar(propuesta).subscribe({
-      next: () => {
-        const snack = this.snackBar.open('✅ Propuesta enviada correctamente', '', {
-          duration: 4000,
-          horizontalPosition: 'center',
-          verticalPosition: 'top',
-          panelClass: ['snack-success']
-        });
-
-        snack.afterDismissed().subscribe(() => {
-          this.limpiarFormulario();
-        });
-      },
-      error: () => {
-        const snack = this.snackBar.open('❌ Error al enviar la propuesta', '', {
-          duration: 4000,
-          horizontalPosition: 'center',
-          verticalPosition: 'top',
-          panelClass: ['snack-error']
-        });
-
-        snack.afterDismissed().subscribe(() => {
-          this.bloqueado = false;
-        });
-      }
-    });
+  this.propuestaService.registrar(propuesta)
+  .pipe(
+    timeout(8000),          // ⬅️ clave
+    finalize(() => {
+      this.bloqueado = false;
+      this.cdr.detectChanges();
+    })
+  )
+  .subscribe({
+    next: () => {
+      this.snackBar.open('✅ Propuesta enviada correctamente', '', {
+        duration: 4000,
+        horizontalPosition: 'center',
+        verticalPosition: 'top',
+        panelClass: ['snack-success']
+      });
+      this.limpiarFormulario();
+    },
+    error: () => {
+      this.snackBar.open('❌ No hay respuesta del servidor', '', {
+        duration: 4000,
+        horizontalPosition: 'center',
+        verticalPosition: 'top',
+        panelClass: ['snack-error']
+      });
+    }
+  });
   }
 
   limpiarFormulario(): void {
