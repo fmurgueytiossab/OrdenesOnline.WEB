@@ -11,6 +11,9 @@ import { MatCardModule } from '@angular/material/card';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatCheckboxModule } from '@angular/material/checkbox';
+import { MatSelectModule } from '@angular/material/select';
+import { MatDatepickerModule } from '@angular/material/datepicker';
+import { MatNativeDateModule } from '@angular/material/core';
 
 import { RepresentanteService } from '../services/RepresentanteService';
 import { PropuestaService } from '../services/PropuestaService';
@@ -35,7 +38,10 @@ import { finalize, timeout } from 'rxjs';
     MatCardModule,
     MatAutocompleteModule,
     MatSnackBarModule,
-    MatCheckboxModule
+    MatCheckboxModule,
+    MatSelectModule,
+    MatDatepickerModule,
+    MatNativeDateModule
   ]
 })
 export class FormularioComponent implements OnInit {
@@ -54,13 +60,18 @@ export class FormularioComponent implements OnInit {
   Precio: number | null = null;
   Mercado = 'Local';
 
-  Moneda = '';              // 01 / 02
-  DescripcionMoneda = '';   // Soles / Dólares
+  Moneda = '';
+  DescripcionMoneda = '';
+
+  minFecha: Date = new Date(new Date().setDate(new Date().getDate() + 1));
 
   valores: Valor[] = [];
   valoresFiltrados: Valor[] = [];
 
   bloqueado = false;
+
+  // Vigencia
+  tipoVigencia: string = 'Hoy';
 
   constructor(
     private representanteService: RepresentanteService,
@@ -90,25 +101,36 @@ export class FormularioComponent implements OnInit {
     });
   }
 
-  // 👉 Monto con máximo 2 decimales
   get monto(): number | null {
+  if (this.esAMercado) return null;
   if (this.Cantidad === null || this.Precio === null) return null;
   return Number((this.Cantidad * this.Precio).toFixed(2));
 }
 
-  // 👉 Precio con máximo 6 decimales
-  validarPrecio(valor: number | null): void {
-    if (valor === null) {
-      this.Precio = null;
-      return;
-    }
-    this.Precio = Number(valor.toFixed(6));
-  }
   cambiarPassword(){
     this.router.navigate(['/change-password']);
   }
 
+onVigenciaChange(): void {
+  if (this.tipoVigencia !== 'Fecha') {
+    this.fechaSeleccionada = null;
+  }
+}
+
+fechaSeleccionada: Date | null = null;
+setFechaVigencia(fecha: Date | null): void {
+  
+  this.fechaSeleccionada = fecha;
+}
+
+formatearPrecio(): void {
+  if (this.Precio !== null) {
+    this.Precio = Number(Number(this.Precio).toFixed(2));
+  }
+}
+
   grabar(): void {
+
     if (!this.Tipo || !this.Instrumento || this.Cantidad === null || (!this.esAMercado && this.Precio === null) || !this.Mercado){
       this.snackBar.open('⚠️ Complete todos los campos obligatorios', '', {
         duration: 3000,
@@ -116,19 +138,40 @@ export class FormularioComponent implements OnInit {
         verticalPosition: 'top',
         panelClass: ['snack-error']
       });
-      this.cdr.detectChanges();
+      return;
+    }
+
+    if (this.tipoVigencia === 'Fecha' && !this.fechaSeleccionada) {
+      this.snackBar.open('⚠️ Debe seleccionar la fecha de vigencia', '', {
+        duration: 3000
+      });
       return;
     }
 
     if (this.Cantidad <= 0 || (!this.esAMercado && (this.Precio ?? 0) <= 0)) {
       this.snackBar.open('⚠️ Cantidad y Precio deben ser mayores a cero', '', {
-        duration: 3000,
-        horizontalPosition: 'center',
-        verticalPosition: 'top',
-        panelClass: ['snack-error']
+        duration: 3000
       });
       return;
     }
+
+    let vigenciaFinal = '';
+
+if (this.tipoVigencia === 'Hoy') {
+  vigenciaFinal = `Por hoy : ${new Date().toLocaleDateString('es-PE')}`;
+}
+
+if (this.tipoVigencia === 'Fecha' && this.fechaSeleccionada) {
+  const dia = this.fechaSeleccionada.getDate().toString().padStart(2, '0');
+  const mes = (this.fechaSeleccionada.getMonth() + 1).toString().padStart(2, '0');
+  const anio = this.fechaSeleccionada.getFullYear();
+
+  vigenciaFinal = `Hasta el ${dia}/${mes}/${anio}`;
+}
+
+if (this.tipoVigencia === 'Permanente') {
+  vigenciaFinal = 'Permanente';
+}
 
     const propuesta: Propuesta = {
       NombreOperador: this.NombreOperador,
@@ -141,38 +184,33 @@ export class FormularioComponent implements OnInit {
       Precio: this.Precio,
       Mercado: this.Mercado,
       Moneda: this.DescripcionMoneda,
-      Dni: this.Dni
+      Dni: this.Dni,
+      Vigencia: vigenciaFinal
     };
 
     this.bloqueado = true;
 
-  this.propuestaService.registrar(propuesta)
-  .pipe(
-    timeout(8000),          // ⬅️ clave
-    finalize(() => {
-      this.bloqueado = false;
-      this.cdr.detectChanges();
-    })
-  )
-  .subscribe({
-    next: () => {
-      this.snackBar.open('✅ Propuesta enviada correctamente', '', {
-        duration: 4000,
-        horizontalPosition: 'center',
-        verticalPosition: 'top',
-        panelClass: ['snack-success']
-      });
-      this.limpiarFormulario();
-    },
-    error: () => {
-      this.snackBar.open('❌ No hay respuesta del servidor', '', {
-        duration: 4000,
-        horizontalPosition: 'center',
-        verticalPosition: 'top',
-        panelClass: ['snack-error']
-      });
-    }
-  });
+    this.propuestaService.registrar(propuesta)
+    .pipe(
+      timeout(8000),
+      finalize(() => {
+        this.bloqueado = false;
+        this.cdr.detectChanges();
+      })
+    )
+    .subscribe({
+      next: () => {
+        this.snackBar.open('✅ Propuesta enviada correctamente', '', {
+          duration: 4000
+        });
+        this.limpiarFormulario();
+      },
+      error: () => {
+        this.snackBar.open('❌ No hay respuesta del servidor', '', {
+          duration: 4000
+        });
+      }
+    });
   }
 
   limpiarFormulario(): void {
@@ -185,6 +223,7 @@ export class FormularioComponent implements OnInit {
     this.DescripcionMoneda = '';
     this.valoresFiltrados = [];
     this.bloqueado = false;
+    this.tipoVigencia = 'Hoy';
 
     this.cdr.detectChanges();
   }
@@ -194,7 +233,9 @@ export class FormularioComponent implements OnInit {
       this.valoresFiltrados = [];
       return;
     }
+
     const filtro = texto.toLowerCase();
+
     this.valoresFiltrados = this.valores.filter(v =>
       v.mnemo.toLowerCase().includes(filtro)
     );
@@ -204,6 +245,7 @@ export class FormularioComponent implements OnInit {
     const existe = this.valores.some(v =>
       v.mnemo.toLowerCase() === this.Instrumento.toLowerCase()
     );
+
     if (!existe) {
       this.Instrumento = '';
       this.Moneda = '';
@@ -230,20 +272,16 @@ export class FormularioComponent implements OnInit {
     }
   }
 
-  onInstrumentoFocus(): void {
-    this.valoresFiltrados = [];
-  }
-
   volverLogin(): void {
     this.router.navigate(['/']);
   }
 
   onTipoOrdenChange(): void {
-  if (this.esAMercado) {
-    this.TipoOrden = 'Mercado';
-    this.Precio = null;
-  } else {
-    this.TipoOrden = 'Limite';
+    if (this.esAMercado) {
+      this.TipoOrden = 'Mercado';
+      this.Precio = null;
+    } else {
+      this.TipoOrden = 'Limite';
+    }
   }
-}
 }

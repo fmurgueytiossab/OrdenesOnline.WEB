@@ -10,4 +10,5 @@ export interface Propuesta {
   Mercado: string;
   Moneda: string;
   Dni: string;
+  Vigencia: string | Date;
 }
