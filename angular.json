@@ -27,15 +27,15 @@
             "styles": [
               "src/material-theme.scss",
               "src/styles.scss"
-            ]            
+            ]
           },
           "configurations": {
             "production": {
               "fileReplacements": [
-              {
-                "replace": "src/environments/environment.ts",
-                "with": "src/environments/environment.prod.ts"
-              }
+                {
+                  "replace": "src/environments/environment.ts",
+                  "with": "src/environments/environment.prod.ts"
+                }
               ],
               "budgets": [
                 {
@@ -55,6 +55,17 @@
               "optimization": false,
               "extractLicenses": false,
               "sourceMap": true
+            },
+            "test": {
+              "fileReplacements": [
+                {
+                  "replace": "src/environments/environment.ts",
+                  "with": "src/environments/environment.test.ts"
+                }
+              ],
+              "optimization": false,
+              "extractLicenses": false,
+              "sourceMap": true
             }
           },
           "defaultConfiguration": "production"
@@ -67,6 +78,9 @@
             },
             "development": {
               "buildTarget": "OrdenesOnline-Web:build:development"
+            },
+            "test": {
+              "buildTarget": "OrdenesOnline-Web:build:test"
             }
           },
           "defaultConfiguration": "development"
