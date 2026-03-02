@@ -88,7 +88,7 @@ enviar() {
 }
 
   volverLogin() {
-    this.router.navigate(['/']);
+    this.router.navigate(['']);
   }
 }
 

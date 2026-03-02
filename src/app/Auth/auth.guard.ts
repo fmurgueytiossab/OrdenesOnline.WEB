@@ -12,13 +12,13 @@ export class AuthGuard implements CanActivate {
     const token = localStorage.getItem('token');
 
     if (!token) {
-      this.router.navigate(['/']);
+      this.router.navigate(['']);
       return false;
     }
 
     if (this.isTokenExpired(token)) {
       localStorage.removeItem('token');
-      this.router.navigate(['/']);
+      this.router.navigate(['']);
       return false;
     }
 

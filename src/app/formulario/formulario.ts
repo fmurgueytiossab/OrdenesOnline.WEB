@@ -108,7 +108,7 @@ export class FormularioComponent implements OnInit {
 }
 
   cambiarPassword(){
-    this.router.navigate(['/change-password']);
+    this.router.navigate(['change-password']);
   }
 
 onVigenciaChange(): void {
@@ -273,7 +273,7 @@ if (this.tipoVigencia === 'Permanente') {
   }
 
   volverLogin(): void {
-    this.router.navigate(['/']);
+    this.router.navigate(['']);
   }
 
   onTipoOrdenChange(): void {

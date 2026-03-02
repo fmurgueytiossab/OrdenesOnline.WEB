@@ -61,7 +61,7 @@ login() {
         if (response.isValid) {
           localStorage.setItem('token', response.token);
           localStorage.setItem('correo', this.correo);
-          this.router.navigate(['/formulario']);
+          this.router.navigate(['formulario']);
         } else {
           this.showError('⚠️ Correo o contraseña inválidos');
         }
@@ -93,7 +93,7 @@ private showError(message: string) {
 
 
 goToForgotPassword() {
-  this.router.navigate(['/forgot-password']);
+  this.router.navigate(['forgot-password']);
 }
 
 }

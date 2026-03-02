@@ -124,7 +124,7 @@ export class ChangePasswordComponent implements OnInit {
             // Si vino desde el correo → redirección automática
             if (this.fromEmail) {
               setTimeout(() => {
-                this.router.navigate(['/']);
+                this.router.navigate(['']);
               }, 3200);
             }
 
@@ -148,9 +148,9 @@ export class ChangePasswordComponent implements OnInit {
 
   volver() {
     if (this.fromEmail) {
-      this.router.navigate(['/']);
+      this.router.navigate(['']);
     } else {
-      this.router.navigate(['/formulario']);
+      this.router.navigate(['formulario']);
     }
   }
 }
