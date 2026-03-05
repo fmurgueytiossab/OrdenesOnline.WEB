@@ -14,9 +14,9 @@ export class RepresentanteService {
 
   constructor(private http: HttpClient) {}
 
-validatePassword(correo: string, password: string): Observable<LoginResponse> {
+login(correo: string, password: string): Observable<LoginResponse> {
   return this.http.post<LoginResponse>(
-    `${this.apiUrl}/Representante/validate-password`,
+    `${this.apiUrl}/Representante/login`,
     { correo, password }
   );
 }

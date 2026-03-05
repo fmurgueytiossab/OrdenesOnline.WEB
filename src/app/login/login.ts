@@ -55,7 +55,7 @@ login() {
   this.isBlocked = true;
 
   this.representanteService
-    .validatePassword(this.correo, this.password)
+    .login(this.correo, this.password)
     .subscribe({
       next: (response) => {
         if (response.isValid) {
@@ -89,8 +89,6 @@ private showError(message: string) {
     panelClass: ['snack-error']
   });
 }
-
-
 
 goToForgotPassword() {
   this.router.navigate(['forgot-password']);
