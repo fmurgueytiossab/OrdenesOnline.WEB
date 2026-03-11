@@ -66,12 +66,19 @@
     <div class="row three">
       <mat-form-field appearance="fill">
         <mat-label>Cantidad</mat-label>
-        <input matInput type="number" [(ngModel)]="Cantidad" [disabled]="bloqueado">
+        <input matInput type="number"
+       [(ngModel)]="Cantidad"
+       (ngModelChange)="MontoManual = null"
+       [disabled]="bloqueado">
       </mat-form-field>
 
       <mat-form-field appearance="fill">
         <mat-label>Precio Límite</mat-label>
-        <input matInput type="text"
+        <input matInput
+       type="number"
+       inputmode="decimal"
+       step="0.01"
+       min="0.01"
        [(ngModel)]="Precio"
        (blur)="formatearPrecio()"
        [disabled]="esAMercado || bloqueado">
@@ -111,13 +118,17 @@
 
     <!-- FILA 5 -->
     <div class="row one">
-      <mat-form-field appearance="fill">
-        <mat-label>Monto</mat-label>
-        <input matInput [value]="monto ?? ''" 
-         [readonly]="!esAMercado" 
-         [disabled]="esAMercado">
-      </mat-form-field>
-    </div>
+  <mat-form-field appearance="fill">
+    <mat-label>Monto</mat-label>
+    <input matInput
+           type="number"
+           min="0"
+           [value]="monto ?? ''"
+           (input)="onMontoChange($event)"
+           [readonly]="Cantidad !== 0"
+           [disabled]="esAMercado && Cantidad !== 0">
+  </mat-form-field>
+</div>
 
     <mat-card-actions class="actions-row">
 

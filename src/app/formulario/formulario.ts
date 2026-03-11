@@ -60,6 +60,8 @@ export class FormularioComponent implements OnInit {
   Precio: number | null = null;
   Mercado = 'Local';
 
+  MontoManual: number | null = null;
+
   Moneda = '';
   DescripcionMoneda = '';
 
@@ -101,10 +103,38 @@ export class FormularioComponent implements OnInit {
     });
   }
 
-  get monto(): number | null {
-  if (this.esAMercado) return null;
-  if (this.Cantidad === null || this.Precio === null) return null;
-  return Number((this.Cantidad * this.Precio).toFixed(2));
+get monto(): number | null {
+
+  if (this.Cantidad === null) {
+    return null;
+  }
+
+  // cantidad 0 → usuario define monto
+  if (this.Cantidad === 0) {
+    return this.MontoManual ?? null;
+  }
+
+  // cantidad > 0 y orden a mercado → monto null
+  if (this.Cantidad > 0 && this.esAMercado) {
+    return null;
+  }
+
+  // cantidad > 0 y precio existe → calcular
+  if (this.Cantidad > 0 && this.Precio !== null) {
+    return Number((this.Cantidad * this.Precio).toFixed(2));
+  }
+
+  return null;
+}
+
+onMontoChange(event: Event): void {
+  const valor = Number((event.target as HTMLInputElement).value);
+
+  if (valor < 0) {
+    this.MontoManual = 0;
+  } else {
+    this.MontoManual = valor;
+  }
 }
 
   cambiarPassword(){
@@ -124,9 +154,15 @@ setFechaVigencia(fecha: Date | null): void {
 }
 
 formatearPrecio(): void {
-  if (this.Precio !== null) {
-    this.Precio = Number(Number(this.Precio).toFixed(2));
+
+  if (this.Precio === null) return;
+
+  if (this.Precio <= 0 || isNaN(this.Precio)) {
+    this.Precio = null;
+    return;
   }
+
+  this.Precio = Number(this.Precio.toFixed(2));
 }
 
   grabar(): void {
@@ -143,17 +179,47 @@ formatearPrecio(): void {
 
     if (this.tipoVigencia === 'Fecha' && !this.fechaSeleccionada) {
       this.snackBar.open('⚠️ Debe seleccionar la fecha de vigencia', '', {
-        duration: 3000
+        duration: 3000,
+        horizontalPosition: 'center',
+        verticalPosition: 'top',
+        panelClass: ['snack-error']
       });
       return;
     }
 
-    if (this.Cantidad <= 0 || (!this.esAMercado && (this.Precio ?? 0) <= 0)) {
+    if (this.Cantidad < 0 || (!this.esAMercado && (this.Precio ?? 0) <= 0)) {
       this.snackBar.open('⚠️ Cantidad y Precio deben ser mayores a cero', '', {
-        duration: 3000
+        duration: 3000,
+        horizontalPosition: 'center',
+        verticalPosition: 'top',
+        panelClass: ['snack-error']
       });
       return;
     }
+
+    if (this.Cantidad === 0 && this.Precio !== null) {
+  const monto = this.MontoManual ?? 0;
+
+  if (monto < this.Precio) {
+    this.snackBar.open('⚠️ El monto debe ser mayor o igual al precio', '', {
+      duration: 3000,
+      horizontalPosition: 'center',
+      verticalPosition: 'top',
+      panelClass: ['snack-error']
+    });
+    return;
+  }
+}
+
+if (this.Cantidad === 0 && this.MontoManual === null) {
+  this.snackBar.open('⚠️ Debe ingresar un monto', '', {
+    duration: 3000,
+    horizontalPosition: 'center',
+    verticalPosition: 'top',
+    panelClass: ['snack-error']
+  });
+  return;
+}
 
     let vigenciaFinal = '';
 
@@ -182,6 +248,7 @@ if (this.tipoVigencia === 'Permanente') {
       Instrumento: this.Instrumento,
       TipoOrden: this.TipoOrden,
       Precio: this.Precio,
+      Monto: this.monto,
       Mercado: this.Mercado,
       Moneda: this.DescripcionMoneda,
       Dni: this.Dni,
@@ -201,13 +268,18 @@ if (this.tipoVigencia === 'Permanente') {
     .subscribe({
       next: () => {
         this.snackBar.open('✅ Propuesta enviada correctamente', '', {
-          duration: 4000
+          duration: 4000,
+        horizontalPosition: 'center',
+        verticalPosition: 'top'        
         });
         this.limpiarFormulario();
       },
       error: () => {
         this.snackBar.open('❌ No hay respuesta del servidor', '', {
-          duration: 4000
+          duration: 4000,
+        horizontalPosition: 'center',
+        verticalPosition: 'top',
+        panelClass: ['snack-error']
         });
       }
     });
