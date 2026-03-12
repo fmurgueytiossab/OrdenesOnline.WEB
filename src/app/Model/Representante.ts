@@ -3,6 +3,6 @@ export interface Representante {
   correoCorporativo: string;
   password: string;
   nombre: string;
-  cosabcli: string;
+  cosabcli: string[];
   dni: string;
 }

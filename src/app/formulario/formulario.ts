@@ -48,7 +48,8 @@ export class FormularioComponent implements OnInit {
 
   NombreOperador = '';
   CorreoCorporativo = '';
-  Cosabcli = '';
+  Cosabcli: string[] = [];
+  CosabcliSeleccionado = '';
   Dni = '';
 
   Tipo = 'Compra';
@@ -84,24 +85,29 @@ export class FormularioComponent implements OnInit {
     private snackBar: MatSnackBar
   ) {}
 
-  ngOnInit(): void {
-    this.representanteService.getMe().subscribe({
-      next: (rep) => {
-        this.NombreOperador = rep.nombre;
-        this.CorreoCorporativo = rep.correoCorporativo;
-        this.Cosabcli = rep.cosabcli;
-        this.Dni = rep.dni;
-        this.cdr.detectChanges();
-      }
-    });
+ngOnInit(): void {
+  this.representanteService.getMe().subscribe({
+    next: (rep) => {
+      this.NombreOperador = rep.nombre;
+      this.CorreoCorporativo = rep.correoCorporativo;
+      this.Cosabcli = rep.cosabcli;
+      this.Dni = rep.dni;
 
-    this.valorService.getAll().subscribe({
-      next: (data) => {
-        this.valores = data;
-        this.valoresFiltrados = [];
+      if (this.Cosabcli.length === 1) {
+        this.CosabcliSeleccionado = this.Cosabcli[0];
       }
-    });
-  }
+
+      this.cdr.detectChanges();
+    }
+  });
+
+  this.valorService.getAll().subscribe({
+    next: (data) => {
+      this.valores = data;
+      this.valoresFiltrados = [];
+    }
+  });
+}
 
 get monto(): number | null {
 
@@ -242,7 +248,7 @@ if (this.tipoVigencia === 'Permanente') {
     const propuesta: Propuesta = {
       NombreOperador: this.NombreOperador,
       CorreoCorporativo: this.CorreoCorporativo,
-      Cosabcli: this.Cosabcli,
+      Cosabcli: this.CosabcliSeleccionado,
       Tipo: this.Tipo,
       Cantidad: this.Cantidad,
       Instrumento: this.Instrumento,

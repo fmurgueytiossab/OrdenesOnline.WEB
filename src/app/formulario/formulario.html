@@ -20,9 +20,27 @@
   <div class="value">{{ CorreoCorporativo }}</div>
 </div>
 
-      <div class="readonly-field">
+      <div>
+
+  <!-- SOLO UN COSABCLI -->
+  <div class="readonly-field" *ngIf="Cosabcli.length === 1">
+    <label>Código de cliente</label>
+    <div class="value">{{ Cosabcli[0] }}</div>
+  </div>
+
+  <!-- VARIOS COSABCLI -->
+  <div *ngIf="Cosabcli.length > 1">
   <label>Código de cliente</label>
-  <div class="value">{{ Cosabcli }}</div>
+
+  <mat-form-field appearance="fill" class="cliente-select">
+    <mat-select [(ngModel)]="CosabcliSeleccionado">
+      <mat-option *ngFor="let c of Cosabcli" [value]="c">
+        {{ c }}
+      </mat-option>
+    </mat-select>
+  </mat-form-field>
+</div>
+
 </div>
     </div>
 
