@@ -87,19 +87,19 @@ export class FormularioComponent implements OnInit {
 
 ngOnInit(): void {
   this.representanteService.getMe().subscribe({
-    next: (rep) => {
-      this.NombreOperador = rep.nombre;
-      this.CorreoCorporativo = rep.correoCorporativo;
-      this.Cosabcli = rep.cosabcli;
-      this.Dni = rep.dni;
+  next: (rep) => {
+    this.NombreOperador = rep.nombre;
+    this.CorreoCorporativo = rep.correoCorporativo;
+    this.Cosabcli = rep.cosabcli;
+    this.Dni = rep.dni;
 
-      if (this.Cosabcli.length === 1) {
-        this.CosabcliSeleccionado = this.Cosabcli[0];
-      }
-
-      this.cdr.detectChanges();
+    if (this.Cosabcli.length > 0) {
+      this.CosabcliSeleccionado = this.Cosabcli[0];
     }
-  });
+
+    this.cdr.detectChanges();
+  }
+});
 
   this.valorService.getAll().subscribe({
     next: (data) => {
@@ -172,6 +172,16 @@ formatearPrecio(): void {
 }
 
   grabar(): void {
+
+    if (!this.CosabcliSeleccionado) {
+    this.snackBar.open('⚠️ Debe seleccionar un código de cliente', '', {
+      duration: 3000,
+      horizontalPosition: 'center',
+      verticalPosition: 'top',
+      panelClass: ['snack-error']
+    });
+    return;
+  }
 
     if (!this.Tipo || !this.Instrumento || this.Cantidad === null || (!this.esAMercado && this.Precio === null) || !this.Mercado){
       this.snackBar.open('⚠️ Complete todos los campos obligatorios', '', {
