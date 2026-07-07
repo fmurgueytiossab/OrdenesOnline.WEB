@@ -168,7 +168,7 @@ formatearPrecio(): void {
     return;
   }
 
-  this.Precio = Number(this.Precio.toFixed(2));
+  this.Precio = Number(this.Precio.toFixed(3));
 }
 
   grabar(): void {
