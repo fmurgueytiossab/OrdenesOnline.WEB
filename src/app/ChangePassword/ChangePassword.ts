@@ -2,13 +2,13 @@ import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
-import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { RepresentanteService } from '../services/RepresentanteService';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { jwtDecode } from 'jwt-decode';
+import { finalize } from 'rxjs';
 import { normalizePortal, PORTAL_ROUTES, PortalType } from '../shared/portal-routes';
 
 type TokenClaims = {
@@ -25,7 +25,6 @@ type TokenClaims = {
   imports: [
     CommonModule,
     FormsModule,
-    MatCardModule,
     MatFormFieldModule,
     MatInputModule,
     MatButtonModule,
@@ -42,7 +41,10 @@ export class ChangePasswordComponent implements OnInit {
   confirmPassword = '';
 
   loading = true;
+  saving = false;
   cambioExitoso = false;
+  showPassword = false;
+  showConfirmPassword = false;
 
   fromEmail = false;
   portal: PortalType = 'representantes';
@@ -54,6 +56,22 @@ export class ChangePasswordComponent implements OnInit {
     private cdr: ChangeDetectorRef,
     private snackBar: MatSnackBar
   ) {}
+
+  get passwordMismatch(): boolean {
+    return this.confirmPassword.length > 0 && this.password !== this.confirmPassword;
+  }
+
+  get hasMinimumLength(): boolean {
+    return this.password.length >= 8;
+  }
+
+  get hasLettersAndNumbers(): boolean {
+    return /[A-Za-z]/.test(this.password) && /\d/.test(this.password);
+  }
+
+  get accountInitial(): string {
+    return this.portal === 'clientes' ? 'C' : 'R';
+  }
 
   ngOnInit(): void {
     this.portal = normalizePortal(this.route.snapshot.data['portal']);
@@ -90,26 +108,33 @@ export class ChangePasswordComponent implements OnInit {
     }
   }
 
-  cambiarPassword() {
+  cambiarPassword(): void {
     if (!this.password || !this.confirmPassword) {
-      this.snackBar.open('Debe completar todos los campos', 'Cerrar', {
-        duration: 3000,
-        horizontalPosition: 'center',
-        verticalPosition: 'top',
-      });
+      this.showValidationMessage('Debe completar todos los campos');
+      return;
+    }
+
+    if (!this.hasMinimumLength) {
+      this.showValidationMessage('La contraseña debe tener al menos 8 caracteres');
+      return;
+    }
+
+    if (!this.hasLettersAndNumbers) {
+      this.showValidationMessage('La contraseña debe combinar letras y números');
       return;
     }
 
     if (this.password !== this.confirmPassword) {
-      this.snackBar.open('Las contraseñas no coinciden', 'Cerrar', {
-        duration: 3000,
-        horizontalPosition: 'center',
-        verticalPosition: 'top',
-      });
+      this.showValidationMessage('Las contraseñas no coinciden');
       return;
     }
 
+    this.saving = true;
     this.representanteService.updatePassword(this.token, this.password)
+      .pipe(finalize(() => {
+        this.saving = false;
+        this.cdr.detectChanges();
+      }))
       .subscribe({
         next: (res: any) => {
 
@@ -147,6 +172,15 @@ export class ChangePasswordComponent implements OnInit {
           });
         }
       });
+  }
+
+  private showValidationMessage(message: string): void {
+    this.snackBar.open(message, 'Cerrar', {
+      duration: 3500,
+      horizontalPosition: 'center',
+      verticalPosition: 'top',
+      panelClass: ['snack-error'],
+    });
   }
 
   volver() {

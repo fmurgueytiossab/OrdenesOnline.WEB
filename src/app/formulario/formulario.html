@@ -2,38 +2,59 @@
   <div class="form-container">
     <div class="header">
       <h2 class="titulo-form">Órdenes de representantes</h2>
-      <div class="header-actions">
-        <button mat-stroked-button type="button" (click)="changePassword()">Cambiar contraseña</button>
-      </div>
     </div>
 
-    <section class="identity-grid" aria-label="Datos del representante">
-      <div class="readonly-field">
-        <label>Nombre del operador</label>
-        <div class="value">{{ nombreOperador }}</div>
+    <section class="representative-panel" aria-labelledby="representative-data-title">
+      <div class="panel-heading">
+        <div>
+          <h3 id="representative-data-title">Datos del representante</h3>
+          <p>La orden se registrará con la siguiente información.</p>
+        </div>
+        <span class="representative-badge">REP</span>
       </div>
 
-      <div class="readonly-field">
-        <label>Correo corporativo</label>
-        <div class="value">{{ correoCorporativo }}</div>
-      </div>
+      <div class="identity-grid">
+        <div class="readonly-field">
+          <label>Nombre del operador</label>
+          <div class="value">{{ nombreOperador }}</div>
+        </div>
 
-      <div>
-        @if (codigosCliente.length <= 1) {
-          <div class="readonly-field">
-            <label>Código de cliente</label>
+        <div class="readonly-field">
+          <label>Correo corporativo</label>
+          <div class="value">{{ correoCorporativo }}</div>
+        </div>
+
+        <div class="readonly-field code-field">
+          <label>Código de cliente</label>
+          @if (codigosCliente.length <= 1) {
             <div class="value">{{ codigoClienteSeleccionado }}</div>
-          </div>
-        } @else {
-          <label class="field-label">Código de cliente</label>
-          <mat-form-field appearance="fill" class="client-select">
-            <mat-select [(ngModel)]="codigoClienteSeleccionado" [disabled]="enviando">
+          } @else {
+            <mat-select
+              class="inline-client-select"
+              [(ngModel)]="codigoClienteSeleccionado"
+              [disabled]="enviando"
+              aria-label="Código de cliente"
+              panelClass="order-select-panel">
+              <mat-select-trigger>
+                <span class="inline-select-value">
+                  <strong>{{ codigoClienteSeleccionado }}</strong>
+                  <span class="inline-arrow" aria-hidden="true">⌄</span>
+                </span>
+              </mat-select-trigger>
               @for (code of codigosCliente; track code) {
-                <mat-option [value]="code">{{ code }}</mat-option>
+                <mat-option [value]="code">
+                  <span class="order-option-row">
+                    <span class="order-option-symbol">CL</span>
+                    <span class="order-option-copy">
+                      <strong>{{ code }}</strong>
+                      <small>Código de cliente</small>
+                    </span>
+                  </span>
+                </mat-option>
               }
             </mat-select>
-          </mat-form-field>
-        }
+          }
+        </div>
       </div>
     </section>
 
@@ -41,7 +62,9 @@
       [markets]="markets"
       marketControl="radio"
       [submitting]="enviando"
+      cancelLabel="Limpiar formulario"
+      [showCancelArrow]="false"
       (orderSubmitted)="submitOrder($event)"
-      (cancelled)="backToLogin()" />
+      (cancelled)="clearOrderForm()" />
   </div>
 </div>

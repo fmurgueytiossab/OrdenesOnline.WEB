@@ -1,96 +1,284 @@
-<div class="row two">
-  <mat-radio-group [(ngModel)]="tipo" [disabled]="submitting" aria-label="Tipo de operación">
-    <mat-radio-button value="Compra">Compra</mat-radio-button>
-    <mat-radio-button value="Venta">Venta</mat-radio-button>
-  </mat-radio-group>
+<div class="order-form">
+  <section class="form-section" aria-labelledby="operation-section-title">
+    <header class="section-header">
+      <span class="section-number" aria-hidden="true">1</span>
+      <div>
+        <h3 id="operation-section-title">Tipo de operación</h3>
+        <p>Selecciona qué deseas hacer y dónde se ejecutará la orden.</p>
+      </div>
+    </header>
 
-  @if (marketControl === 'radio') {
-    <mat-radio-group [(ngModel)]="mercado" [disabled]="submitting" aria-label="Mercado">
-      @for (option of markets; track option.code) {
-        <mat-radio-button [value]="option.code">{{ option.name }}</mat-radio-button>
+    <div class="operation-grid">
+      <div class="control-group">
+        <span class="control-label">Operación</span>
+        <div class="segmented-control" role="radiogroup" aria-label="Tipo de operación">
+          <button
+            type="button"
+            role="radio"
+            [attr.aria-checked]="tipo === 'Compra'"
+            [class.active]="tipo === 'Compra'"
+            [disabled]="submitting"
+            (click)="tipo = 'Compra'">
+            <span class="operation-dot buy" aria-hidden="true">↗</span>
+            <span><strong>Compra</strong><small>Adquirir valores</small></span>
+          </button>
+          <button
+            type="button"
+            role="radio"
+            [attr.aria-checked]="tipo === 'Venta'"
+            [class.active]="tipo === 'Venta'"
+            [disabled]="submitting"
+            (click)="tipo = 'Venta'">
+            <span class="operation-dot sell" aria-hidden="true">↘</span>
+            <span><strong>Venta</strong><small>Vender posiciones</small></span>
+          </button>
+        </div>
+      </div>
+
+      @if (marketControl === 'radio') {
+        <div class="control-group">
+          <span class="control-label">Mercado</span>
+          <div class="segmented-control market-options" role="radiogroup" aria-label="Mercado">
+            @for (option of markets; track option.code) {
+              <button
+                type="button"
+                role="radio"
+                [attr.aria-checked]="mercado === option.code"
+                [class.active]="mercado === option.code"
+                [disabled]="submitting"
+                (click)="mercado = option.code">
+                <span><strong>{{ option.name }}</strong><small>Seleccionar</small></span>
+              </button>
+            }
+          </div>
+        </div>
+      } @else {
+        <div class="control-group channel-control">
+          <span class="control-label">Canal de ejecución</span>
+          <mat-form-field appearance="outline" class="form-field enhanced-select-field">
+            <mat-label>Selecciona un canal</mat-label>
+            <mat-select
+              [(ngModel)]="mercado"
+              [disabled]="submitting"
+              panelClass="order-select-panel">
+              <mat-select-trigger>
+                <span class="order-select-trigger">
+                  <span class="order-select-symbol">{{ selectedMarket ? marketBadge(selectedMarket) : '—' }}</span>
+                  <span class="order-select-copy">
+                    <strong>{{ selectedMarket?.name || 'Selecciona un canal' }}</strong>
+                    <small>{{ selectedMarket?.code || 'Sin selección' }}</small>
+                  </span>
+                </span>
+              </mat-select-trigger>
+              @for (option of markets; track option.code) {
+                <mat-option [value]="option.code">
+                  <span class="order-option-row">
+                    <span class="order-option-symbol">{{ marketBadge(option) }}</span>
+                    <span class="order-option-copy">
+                      <strong>{{ option.name }}</strong>
+                      <small>{{ option.code }} · Canal de ejecución</small>
+                    </span>
+                  </span>
+                </mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+          <small class="field-help">Intermediario por el que se procesará la operación.</small>
+        </div>
       }
-    </mat-radio-group>
-  } @else {
-    <mat-form-field appearance="fill">
-      <mat-label>Mercado</mat-label>
-      <mat-select [(ngModel)]="mercado" [disabled]="submitting">
-        @for (option of markets; track option.code) {
-          <mat-option [value]="option.code">{{ option.name }}</mat-option>
-        }
-      </mat-select>
-    </mat-form-field>
-  }
-</div>
+    </div>
+  </section>
 
-<div class="row two">
-  <mat-form-field appearance="fill">
-    <mat-label>Instrumento</mat-label>
-    <input matInput [(ngModel)]="instrumento"
-           (ngModelChange)="filterValues($event)"
-           (blur)="validateInstrument()"
-           [matAutocomplete]="auto"
-           [disabled]="submitting">
-    <mat-autocomplete #auto="matAutocomplete" (optionSelected)="selectInstrument($event.option.value)">
-      @for (value of valoresFiltrados; track value.cosabval) {
-        <mat-option [value]="value.mnemo">{{ value.mnemo }}</mat-option>
+  <section class="form-section" aria-labelledby="details-section-title">
+    <header class="section-header">
+      <span class="section-number" aria-hidden="true">2</span>
+      <div>
+        <h3 id="details-section-title">Detalles de la orden</h3>
+        <p>Ingresa el instrumento, la cantidad y las condiciones de precio.</p>
+      </div>
+    </header>
+
+    <div class="details-stack">
+      <div class="detail-group">
+        <div class="detail-group-heading">
+          <h4>Instrumento y moneda</h4>
+          <p>Busca el valor que deseas negociar.</p>
+        </div>
+
+        <div class="field-grid instrument-grid">
+          <mat-form-field appearance="outline" class="form-field">
+            <mat-label>Instrumento o ticker</mat-label>
+            <input
+              matInput
+              [(ngModel)]="instrumento"
+              (ngModelChange)="filterValues($event)"
+              (blur)="validateInstrument()"
+              [matAutocomplete]="auto"
+              [disabled]="submitting"
+              placeholder="Ej. AAPL">
+            <mat-autocomplete #auto="matAutocomplete" (optionSelected)="selectInstrument($event.option.value)">
+              @for (value of valoresFiltrados; track value.cosabval) {
+                <mat-option [value]="value.mnemo">{{ value.mnemo }}</mat-option>
+              }
+            </mat-autocomplete>
+            <mat-hint>Busca por el código del instrumento</mat-hint>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="form-field currency-field">
+            <mat-label>Moneda</mat-label>
+            <input matInput [value]="descripcionMoneda" readonly [disabled]="submitting" placeholder="Automática">
+            <mat-hint>Se completa al elegir el instrumento</mat-hint>
+          </mat-form-field>
+        </div>
+      </div>
+
+      <div class="detail-group execution-group">
+        <div class="detail-group-heading">
+          <h4>Condiciones de ejecución</h4>
+          <p>Indica la cantidad y cómo debe determinarse el precio.</p>
+        </div>
+
+        <div class="field-grid conditions-grid">
+          <mat-form-field appearance="outline" class="form-field">
+            <mat-label>Cantidad</mat-label>
+            <input
+              matInput
+              type="number"
+              min="0"
+              [(ngModel)]="cantidad"
+              (ngModelChange)="montoManual = null"
+              [disabled]="submitting"
+              placeholder="0">
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="form-field">
+            <mat-label>Precio límite</mat-label>
+            <input
+              matInput
+              type="number"
+              inputmode="decimal"
+              step="0.001"
+              min="0.001"
+              [(ngModel)]="precio"
+              (blur)="formatPrice()"
+              [disabled]="esAMercado || submitting"
+              placeholder="0.000">
+            <mat-hint>{{ esAMercado ? 'No aplica para una orden a mercado' : 'Precio máximo o mínimo de ejecución' }}</mat-hint>
+          </mat-form-field>
+
+          <div class="market-toggle" [class.active]="esAMercado">
+            <mat-checkbox
+              [(ngModel)]="esAMercado"
+              (change)="updateOrderType()"
+              [disabled]="submitting">
+              A mercado
+            </mat-checkbox>
+            <small>Se ejecutará al mejor precio disponible.</small>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="form-section" aria-labelledby="validity-section-title">
+    <header class="section-header">
+      <span class="section-number" aria-hidden="true">3</span>
+      <div>
+        <h3 id="validity-section-title">Vigencia y monto</h3>
+        <p>Define durante cuánto tiempo estará activa la instrucción.</p>
+      </div>
+    </header>
+
+    <div class="field-grid validity-grid">
+      <mat-form-field appearance="outline" class="form-field enhanced-select-field">
+        <mat-label>Vigencia</mat-label>
+        <mat-select
+          [(ngModel)]="tipoVigencia"
+          (selectionChange)="updateValidity()"
+          [disabled]="submitting"
+          panelClass="order-select-panel">
+          <mat-select-trigger>
+            <span class="order-select-trigger compact">
+              <span class="order-select-symbol validity">V</span>
+              <span class="order-select-copy">
+                <strong>{{ validityLabel(tipoVigencia) }}</strong>
+                <small>{{ validityDescription(tipoVigencia) }}</small>
+              </span>
+            </span>
+          </mat-select-trigger>
+          @for (validity of ['Hoy', 'Fecha', 'Permanente']; track validity) {
+            <mat-option [value]="validity">
+              <span class="order-option-row">
+                <span class="order-option-symbol validity">{{ validity === 'Permanente' ? 'P' : validity === 'Fecha' ? 'F' : 'H' }}</span>
+                <span class="order-option-copy">
+                  <strong>{{ validityLabel(validity) }}</strong>
+                  <small>{{ validityDescription(validity) }}</small>
+                </span>
+              </span>
+            </mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      @if (tipoVigencia === 'Fecha') {
+        <mat-form-field appearance="outline" class="form-field">
+          <mat-label>Fecha de vigencia</mat-label>
+          <input
+            matInput
+            [matDatepicker]="picker"
+            [(ngModel)]="fechaSeleccionada"
+            [min]="minFecha"
+            [disabled]="submitting">
+          <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
+          <mat-datepicker #picker></mat-datepicker>
+        </mat-form-field>
       }
-    </mat-autocomplete>
-  </mat-form-field>
 
-  <mat-form-field appearance="fill">
-    <mat-label>Moneda</mat-label>
-    <input matInput [value]="descripcionMoneda" readonly [disabled]="submitting">
-  </mat-form-field>
-</div>
+      <mat-form-field appearance="outline" class="form-field amount-field">
+        <mat-label>Monto</mat-label>
+        <input
+          matInput
+          type="number"
+          min="0"
+          [value]="monto ?? ''"
+          (input)="updateAmount($event)"
+          [readonly]="cantidad !== 0"
+          [disabled]="submitting || (esAMercado && cantidad !== 0)"
+          placeholder="0.00">
+        <mat-hint>{{ cantidad === 0 ? 'Ingresa el monto de la operación' : 'Calculado automáticamente' }}</mat-hint>
+      </mat-form-field>
+    </div>
 
-<div class="row three">
-  <mat-form-field appearance="fill">
-    <mat-label>Cantidad</mat-label>
-    <input matInput type="number" [(ngModel)]="cantidad" (ngModelChange)="montoManual = null" [disabled]="submitting">
-  </mat-form-field>
+    <div class="order-summary" aria-live="polite">
+      <div class="summary-icon" aria-hidden="true">∑</div>
+      <div class="summary-amount">
+        <span>Monto estimado</span>
+        <strong>
+          @if (monto !== null) {
+            {{ monto | number: '1.2-2' }} <small>{{ descripcionMoneda || 'Moneda por definir' }}</small>
+          } @else {
+            Por calcular
+          }
+        </strong>
+      </div>
+      <div class="summary-tags">
+        <span>{{ tipo }}</span>
+        <span>{{ instrumento || 'Sin instrumento' }}</span>
+        <span>{{ mercado || 'Sin canal' }}</span>
+      </div>
+    </div>
+  </section>
 
-  <mat-form-field appearance="fill">
-    <mat-label>Precio límite</mat-label>
-    <input matInput type="number" inputmode="decimal" step="0.001" min="0.001"
-           [(ngModel)]="precio" (blur)="formatPrice()" [disabled]="esAMercado || submitting">
-  </mat-form-field>
-
-  <mat-checkbox [(ngModel)]="esAMercado" (change)="updateOrderType()" [disabled]="submitting" class="center">
-    A mercado
-  </mat-checkbox>
-</div>
-
-<div class="row two">
-  <mat-form-field appearance="fill">
-    <mat-label>Vigencia</mat-label>
-    <mat-select [(ngModel)]="tipoVigencia" (selectionChange)="updateValidity()" [disabled]="submitting">
-      <mat-option value="Hoy">Por hoy</mat-option>
-      <mat-option value="Fecha">Hasta el</mat-option>
-      <mat-option value="Permanente">Permanente</mat-option>
-    </mat-select>
-  </mat-form-field>
-
-  @if (tipoVigencia === 'Fecha') {
-    <mat-form-field appearance="fill">
-      <mat-label>Seleccionar fecha</mat-label>
-      <input matInput [matDatepicker]="picker" [(ngModel)]="fechaSeleccionada" [min]="minFecha" [disabled]="submitting">
-      <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
-      <mat-datepicker #picker></mat-datepicker>
-    </mat-form-field>
-  }
-</div>
-
-<div class="row one">
-  <mat-form-field appearance="fill">
-    <mat-label>Monto</mat-label>
-    <input matInput type="number" min="0" [value]="monto ?? ''" (input)="updateAmount($event)"
-           [readonly]="cantidad !== 0" [disabled]="submitting || (esAMercado && cantidad !== 0)">
-  </mat-form-field>
-</div>
-
-<div class="actions-row">
-  <button mat-button type="button" (click)="cancelled.emit()" [disabled]="submitting">Volver</button>
-  <button mat-raised-button color="primary" type="button" (click)="submit()" [disabled]="submitting">
-    {{ submitting ? 'Enviando…' : 'Enviar' }}
-  </button>
+  <footer class="actions-row">
+    <button mat-button class="back-button" type="button" (click)="cancelled.emit()" [disabled]="submitting">
+      @if (showCancelArrow) {
+        <span aria-hidden="true">←</span>
+      }
+      {{ cancelLabel }}
+    </button>
+    <button mat-flat-button color="primary" class="submit-button" type="button" (click)="submit()" [disabled]="submitting">
+      <span>{{ submitting ? 'Enviando…' : 'Enviar orden' }}</span>
+      @if (!submitting) { <span aria-hidden="true">→</span> }
+    </button>
+  </footer>
 </div>

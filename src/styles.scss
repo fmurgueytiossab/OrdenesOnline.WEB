@@ -37,3 +37,162 @@ mat-card-actions.actions-row {
   align-items: center;
   gap: 1rem;
 }
+
+/* ====== SELECTORES DEL PORTAL ====== */
+.order-select-trigger,
+.order-option-row {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.order-select-trigger { padding: 0.12rem 0; }
+.order-select-trigger.compact { gap: 0.55rem; }
+
+.order-select-symbol,
+.order-option-symbol {
+  width: 2rem;
+  height: 2rem;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  color: #175cd3;
+  background: #eef4ff;
+  border: 1px solid #d1e0ff;
+  border-radius: 0.55rem;
+  font-size: 0.66rem;
+  font-weight: 850;
+  letter-spacing: 0.02em;
+}
+
+.order-select-symbol.validity,
+.order-option-symbol.validity {
+  color: #344054;
+  background: #f2f4f7;
+  border-color: #e4e7ec;
+}
+
+.order-select-copy,
+.order-option-copy { min-width: 0; }
+
+.order-select-copy strong,
+.order-select-copy small,
+.order-option-copy strong,
+.order-option-copy small { display: block; }
+
+.order-select-copy strong,
+.order-option-copy strong {
+  overflow: hidden;
+  color: #182230;
+  font-size: 0.78rem;
+  font-weight: 800;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.order-select-copy small,
+.order-option-copy small {
+  margin-top: 0.1rem;
+  overflow: hidden;
+  color: #98a2b3;
+  font-size: 0.65rem;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.order-select-panel.mat-mdc-select-panel {
+  margin-top: 0.45rem;
+  padding: 0.4rem !important;
+  background: rgba(255, 255, 255, 0.98) !important;
+  border: 1px solid #e4e7ec;
+  border-radius: 0.8rem !important;
+  box-shadow: 0 1rem 2.5rem rgba(16, 24, 40, 0.16) !important;
+  backdrop-filter: blur(0.75rem);
+}
+
+.order-select-panel .mat-mdc-option {
+  min-height: 3.6rem;
+  margin: 0.1rem 0;
+  padding: 0.55rem 0.65rem;
+  border-radius: 0.6rem;
+}
+
+.order-select-panel .mat-mdc-option:hover:not(.mdc-list-item--disabled) {
+  background: #f7f9fc !important;
+}
+
+.order-select-panel .mat-mdc-option.mdc-list-item--selected {
+  background: #eef4ff !important;
+}
+
+.order-select-panel .mat-mdc-option.mdc-list-item--selected .order-option-symbol {
+  color: #fff;
+  background: #1f5eff;
+  border-color: #1f5eff;
+}
+
+.order-select-panel .mat-pseudo-checkbox { color: #1f5eff; }
+
+.tracking-select-panel.mat-mdc-select-panel {
+  margin-top: 0.4rem;
+  padding: 0.35rem !important;
+  background: rgba(255, 255, 255, 0.99) !important;
+  border: 1px solid #e4e7ec;
+  border-radius: 0.75rem !important;
+  box-shadow: 0 1rem 2.5rem rgba(16, 24, 40, 0.16) !important;
+}
+
+.tracking-select-panel .mat-mdc-option {
+  min-height: 2.75rem;
+  margin: 0.1rem 0;
+  border-radius: 0.55rem;
+  font-size: 0.86rem;
+}
+
+.tracking-select-panel .mat-mdc-option:hover:not(.mdc-list-item--disabled) {
+  background: #f7f9fc !important;
+}
+
+.tracking-select-panel .mat-mdc-option.mdc-list-item--selected {
+  color: #1747c9;
+  background: #eef4ff !important;
+  font-weight: 700;
+}
+
+.tracking-datepicker-panel.mat-datepicker-content {
+  overflow: hidden;
+  border: 1px solid #e4e7ec;
+  border-radius: 1rem;
+  box-shadow: 0 1.25rem 3rem rgba(16, 24, 40, 0.2);
+}
+
+.tracking-datepicker-panel .mat-calendar {
+  width: 19.5rem;
+  height: auto;
+  padding: 0.35rem;
+}
+
+.tracking-datepicker-panel .mat-calendar-header {
+  padding: 0.65rem 0.75rem 0;
+}
+
+.tracking-datepicker-panel .mat-calendar-body-selected {
+  color: #fff;
+  background: #1f5eff;
+  box-shadow: 0 0.25rem 0.55rem rgba(31, 94, 255, 0.28);
+}
+
+.tracking-datepicker-panel .mat-calendar-body-today:not(.mat-calendar-body-selected) {
+  color: #1747c9;
+  border-color: #84adff;
+  background: #eef4ff;
+}
+
+.tracking-datepicker-panel .mat-datepicker-actions {
+  gap: 0.35rem;
+  padding: 0.65rem 0.85rem 0.85rem;
+  border-top: 1px solid #eaecf0;
+}

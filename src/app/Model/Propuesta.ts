@@ -12,4 +12,5 @@ export interface Propuesta {
   Moneda: string;
   Dni: string;
   Vigencia: string | Date;
+  SourceOrderId?: string;
 }

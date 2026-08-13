@@ -40,6 +40,9 @@ export class OrderFormComponent implements OnInit {
   @Input() markets: MarketOption[] = [];
   @Input() marketControl: 'radio' | 'select' = 'radio';
   @Input() submitting = false;
+  @Input() initialValue: Partial<OrderFormValue> | null = null;
+  @Input() cancelLabel = 'Volver';
+  @Input() showCancelArrow = true;
 
   @Output() orderSubmitted = new EventEmitter<OrderFormValue>();
   @Output() cancelled = new EventEmitter<void>();
@@ -69,6 +72,10 @@ export class OrderFormComponent implements OnInit {
   ngOnInit(): void {
     this.mercado = this.markets[0]?.code ?? '';
 
+    if (this.initialValue) {
+      this.applyInitialValue(this.initialValue);
+    }
+
     this.valorService.getAll().subscribe({
       next: (data) => {
         this.valores = data;
@@ -85,6 +92,26 @@ export class OrderFormComponent implements OnInit {
       return Number((this.cantidad * this.precio).toFixed(2));
     }
     return null;
+  }
+
+  get selectedMarket(): MarketOption | undefined {
+    return this.markets.find((market) => market.code === this.mercado);
+  }
+
+  marketBadge(market: MarketOption): string {
+    return market.code.slice(0, 2).toUpperCase();
+  }
+
+  validityLabel(value: string): string {
+    if (value === 'Fecha') return 'Hasta una fecha';
+    if (value === 'Permanente') return 'Permanente';
+    return 'Por hoy';
+  }
+
+  validityDescription(value: string): string {
+    if (value === 'Fecha') return 'Elige el último día de vigencia';
+    if (value === 'Permanente') return 'Activa hasta ejecución o cancelación';
+    return 'Válida hasta el cierre de hoy';
   }
 
   submit(): void {
@@ -202,6 +229,20 @@ export class OrderFormComponent implements OnInit {
       return `Hasta el ${day}/${month}/${this.fechaSeleccionada.getFullYear()}`;
     }
     return `Por hoy : ${new Date().toLocaleDateString('es-PE')}`;
+  }
+
+  private applyInitialValue(value: Partial<OrderFormValue>): void {
+    this.tipo = value.tipo ?? this.tipo;
+    this.cantidad = value.cantidad ?? this.cantidad;
+    this.instrumento = value.instrumento ?? this.instrumento;
+    this.esAMercado = value.tipoOrden?.toLowerCase() === 'mercado';
+    this.tipoOrden = this.esAMercado ? 'Mercado' : 'Limite';
+    this.precio = this.esAMercado ? null : (value.precio ?? this.precio);
+    this.mercado = value.mercado ?? this.mercado;
+    this.montoManual = value.monto ?? this.montoManual;
+    this.moneda = value.moneda === 'Dólares' ? '02' : value.moneda === 'Soles' ? '01' : '';
+    this.descripcionMoneda = value.moneda ?? this.descripcionMoneda;
+    this.tipoVigencia = value.vigencia?.toLowerCase().includes('permanente') ? 'Permanente' : 'Hoy';
   }
 
   private showError(message: string): void {

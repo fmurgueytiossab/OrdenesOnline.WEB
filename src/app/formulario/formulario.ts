@@ -1,11 +1,8 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectorRef, Component, ViewChild } from '@angular/core';
-import { MatButtonModule } from '@angular/material/button';
-import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
 import { finalize, timeout } from 'rxjs';
 
 import { Propuesta } from '../Model/Propuesta';
@@ -13,7 +10,6 @@ import { OrderFormComponent } from '../orders/components/order-form/order-form';
 import { MarketOption, OrderFormValue } from '../orders/models/order-form-value';
 import { PropuestaService } from '../services/PropuestaService';
 import { RepresentanteService } from '../services/RepresentanteService';
-import { PORTAL_ROUTES } from '../shared/portal-routes';
 
 @Component({
   selector: 'app-pagina-form',
@@ -23,8 +19,6 @@ import { PORTAL_ROUTES } from '../shared/portal-routes';
   imports: [
     CommonModule,
     FormsModule,
-    MatButtonModule,
-    MatFormFieldModule,
     MatSelectModule,
     MatSnackBarModule,
     OrderFormComponent,
@@ -48,7 +42,6 @@ export class FormularioComponent {
   constructor(
     private readonly representanteService: RepresentanteService,
     private readonly propuestaService: PropuestaService,
-    private readonly router: Router,
     private readonly snackBar: MatSnackBar,
     private readonly cdr: ChangeDetectorRef,
   ) {
@@ -80,12 +73,8 @@ export class FormularioComponent {
     this.sendProposal(propuesta);
   }
 
-  changePassword(): void {
-    this.router.navigateByUrl(PORTAL_ROUTES.representantes.changePassword);
-  }
-
-  backToLogin(): void {
-    this.router.navigateByUrl(PORTAL_ROUTES.representantes.login);
+  clearOrderForm(): void {
+    this.orderForm?.reset();
   }
 
   private loadRepresentative(): void {

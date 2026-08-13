@@ -1,41 +1,64 @@
 <div class="page-container">
   <div class="form-container">
     <div class="header">
-      <div>
-        <h2 class="titulo-form">Órdenes de clientes</h2>
-        <span class="mock-label">Datos temporales de prueba</span>
-      </div>
-      <button mat-stroked-button type="button" (click)="changePassword()">
-        Cambiar contraseña
-      </button>
-    </div>
-
-    <section class="identity-grid" aria-label="Datos del cliente">
-      <div class="readonly-field">
-        <label>Nombre del cliente</label>
-        <div class="value">{{ client.name }}</div>
-      </div>
-
-      <div class="readonly-field contact-field">
-        <label>Correo</label>
-        <div class="value">
-          <span>{{ client.email }}</span>
-          <span class="secondary-label">Celular</span>
-          <span>{{ client.phone }}</span>
+      <div class="title-group">
+        <span class="title-icon" aria-hidden="true">
+          <svg width="22" height="22" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" /></svg>
+        </span>
+        <div>
+          <span class="eyebrow">Operaciones</span>
+          <h1 class="titulo-form">Nueva orden</h1>
+          <p class="page-description">Completa los datos para registrar una nueva instrucción.</p>
         </div>
       </div>
+    </div>
 
-      <div class="readonly-field">
-        <label>Código de cliente</label>
-        <div class="value">{{ client.clientCode }}</div>
+    @if (sourceOrderId) {
+      <div class="source-order-notice">
+        Nueva orden basada en <strong>{{ sourceOrderId }}</strong>. Puedes modificar los datos antes de enviarla.
+      </div>
+    }
+
+    <section class="client-panel" aria-labelledby="client-data-title">
+      <div class="panel-heading">
+        <div>
+          <h2 id="client-data-title">Datos del cliente</h2>
+          <p>La orden se registrará para la siguiente cuenta.</p>
+        </div>
+        <span class="client-badge">CLI</span>
+      </div>
+
+      <div class="identity-grid">
+        <div class="readonly-field">
+          <label>Nombre del cliente</label>
+          <div class="value">{{ client.name }}</div>
+        </div>
+
+        <div class="readonly-field">
+          <label>Correo</label>
+          <div class="value">{{ client.email }}</div>
+        </div>
+
+        <div class="readonly-field">
+          <label>Celular</label>
+          <div class="value">{{ client.phone }}</div>
+        </div>
+
+        <div class="readonly-field">
+          <label>Código de cliente</label>
+          <div class="value">{{ client.clientCode }}</div>
+        </div>
       </div>
     </section>
 
     <app-order-form
       [markets]="markets"
       marketControl="select"
+      [initialValue]="initialOrder"
       [submitting]="submitting"
+      cancelLabel="Limpiar formulario"
+      [showCancelArrow]="false"
       (orderSubmitted)="submitOrder($event)"
-      (cancelled)="backToLogin()" />
+      (cancelled)="clearOrderForm()" />
   </div>
 </div>

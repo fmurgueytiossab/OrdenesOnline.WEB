@@ -1,14 +1,13 @@
 import { ChangeDetectorRef, Component, ViewChild } from '@angular/core';
-import { MatButtonModule } from '@angular/material/button';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { Router } from '@angular/router';
 import { finalize, timeout } from 'rxjs';
 
 import { Propuesta } from '../../../Model/Propuesta';
 import { PropuestaService } from '../../../services/PropuestaService';
-import { PORTAL_ROUTES } from '../../../shared/portal-routes';
 import { OrderFormComponent } from '../../components/order-form/order-form';
 import { MarketOption, OrderFormValue } from '../../models/order-form-value';
+import { ClientOrderTrackingService } from '../../services/client-order-tracking.service';
 
 interface MockClient {
   name: string;
@@ -23,12 +22,14 @@ interface MockClient {
   standalone: true,
   templateUrl: './client-orders.html',
   styleUrls: ['./client-orders.css'],
-  imports: [MatButtonModule, MatSnackBarModule, OrderFormComponent],
+  imports: [MatSnackBarModule, OrderFormComponent],
 })
 export class ClientOrdersComponent {
   @ViewChild(OrderFormComponent) private orderForm?: OrderFormComponent;
 
   submitting = false;
+  readonly sourceOrderId: string | null;
+  readonly initialOrder: Partial<OrderFormValue> | null;
 
   readonly client: MockClient = {
     name: 'Cliente de prueba',
@@ -41,7 +42,8 @@ export class ClientOrdersComponent {
   readonly markets: MarketOption[] = [
     { code: 'BVL', name: 'BVL' },
     { code: 'CANACCORD', name: 'Canaccord' },
-    { code: 'OTRO', name: 'Otro' },
+    { code: 'RENTA4', name: 'Renta 4' },
+    { code: 'PERSHING', name: 'Pershing' },
   ];
 
   constructor(
@@ -49,7 +51,24 @@ export class ClientOrdersComponent {
     private readonly router: Router,
     private readonly snackBar: MatSnackBar,
     private readonly cdr: ChangeDetectorRef,
-  ) {}
+    trackingService: ClientOrderTrackingService,
+  ) {
+    this.sourceOrderId = this.router.parseUrl(this.router.url).queryParams['sourceOrderId'] ?? null;
+    const sourceOrder = this.sourceOrderId ? trackingService.getById(this.sourceOrderId) : undefined;
+    this.initialOrder = sourceOrder
+      ? {
+          tipo: sourceOrder.side,
+          cantidad: sourceOrder.quantity,
+          instrumento: sourceOrder.instrument,
+          tipoOrden: sourceOrder.orderType,
+          precio: sourceOrder.price,
+          monto: sourceOrder.price === null ? null : sourceOrder.quantity * sourceOrder.price,
+          mercado: sourceOrder.channel,
+          moneda: sourceOrder.currency === 'USD' ? 'Dólares' : 'Soles',
+          vigencia: sourceOrder.validity,
+        }
+      : null;
+  }
 
   submitOrder(order: OrderFormValue): void {
     // Adaptador temporal al contrato actual. Se reemplazará por ClientOrderRequest
@@ -68,6 +87,7 @@ export class ClientOrdersComponent {
       Moneda: order.moneda,
       Dni: this.client.documentNumber,
       Vigencia: order.vigencia,
+      SourceOrderId: this.sourceOrderId ?? undefined,
     };
 
     this.submitting = true;
@@ -86,12 +106,8 @@ export class ClientOrdersComponent {
     });
   }
 
-  changePassword(): void {
-    this.router.navigateByUrl(PORTAL_ROUTES.clientes.changePassword);
-  }
-
-  backToLogin(): void {
-    this.router.navigateByUrl(PORTAL_ROUTES.clientes.login);
+  clearOrderForm(): void {
+    this.orderForm?.reset();
   }
 
   private showMessage(message: string, isError = false): void {
