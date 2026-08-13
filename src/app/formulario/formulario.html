@@ -1,165 +1,47 @@
 <div class="page-container">
   <div class="form-container">
-
     <div class="header">
-      <h2 class="titulo-form">Ordenes de Representantes</h2>
-      <button mat-stroked-button type="button" (click)="cambiarPassword()">
-        Cambiar contraseña
-      </button>
+      <h2 class="titulo-form">Órdenes de representantes</h2>
+      <div class="header-actions">
+        <button mat-stroked-button type="button" (click)="changePassword()">Cambiar contraseña</button>
+      </div>
     </div>
 
-    <!-- FILA 1 -->
-    <div class="row three">
+    <section class="identity-grid" aria-label="Datos del representante">
       <div class="readonly-field">
-  <label>Nombre del operador</label>
-  <div class="value">{{ NombreOperador }}</div>
-</div>
+        <label>Nombre del operador</label>
+        <div class="value">{{ nombreOperador }}</div>
+      </div>
 
       <div class="readonly-field">
-  <label>Correo corporativo</label>
-  <div class="value">{{ CorreoCorporativo }}</div>
-</div>
+        <label>Correo corporativo</label>
+        <div class="value">{{ correoCorporativo }}</div>
+      </div>
 
       <div>
+        @if (codigosCliente.length <= 1) {
+          <div class="readonly-field">
+            <label>Código de cliente</label>
+            <div class="value">{{ codigoClienteSeleccionado }}</div>
+          </div>
+        } @else {
+          <label class="field-label">Código de cliente</label>
+          <mat-form-field appearance="fill" class="client-select">
+            <mat-select [(ngModel)]="codigoClienteSeleccionado" [disabled]="enviando">
+              @for (code of codigosCliente; track code) {
+                <mat-option [value]="code">{{ code }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+        }
+      </div>
+    </section>
 
-  <!-- SOLO UN COSABCLI -->
-  <div class="readonly-field" *ngIf="Cosabcli.length === 1">
-    <label>Código de cliente</label>
-    <div class="value">{{ Cosabcli[0] }}</div>
-  </div>
-
-  <!-- VARIOS COSABCLI -->
-  <div *ngIf="Cosabcli.length > 1">
-  <label>Código de cliente</label>
-
-  <mat-form-field appearance="fill" class="cliente-select">
-    <mat-select [(ngModel)]="CosabcliSeleccionado">
-      <mat-option *ngFor="let c of Cosabcli" [value]="c">
-        {{ c }}
-      </mat-option>
-    </mat-select>
-  </mat-form-field>
-</div>
-
-</div>
-    </div>
-
-    <!-- FILA 2 -->
-    <div class="row two">
-      <mat-radio-group [(ngModel)]="Tipo" [disabled]="bloqueado">
-        <mat-radio-button value="Compra">Compra</mat-radio-button>
-        <mat-radio-button value="Venta">Venta</mat-radio-button>
-      </mat-radio-group>
-
-      <mat-radio-group [(ngModel)]="Mercado" [disabled]="bloqueado">
-        <mat-radio-button value="Local">Local</mat-radio-button>
-        <mat-radio-button value="Extranjero">Extranjero</mat-radio-button>
-      </mat-radio-group>
-    </div>
-
-    <!-- FILA 3 -->
-    <div class="row two">
-      <mat-form-field appearance="fill">
-        <mat-label>Instrumento</mat-label>
-        <input matInput [(ngModel)]="Instrumento"
-               (ngModelChange)="filtrarValores($event)"
-               (blur)="validarInstrumento()"
-               [matAutocomplete]="auto"
-               [disabled]="bloqueado">
-        <mat-autocomplete #auto="matAutocomplete"
-          (optionSelected)="onInstrumentoSeleccionado($event.option.value)">
-          <mat-option *ngFor="let v of valoresFiltrados" [value]="v.mnemo">
-            {{ v.mnemo }}
-          </mat-option>
-        </mat-autocomplete>
-      </mat-form-field>
-
-      <mat-form-field appearance="fill">
-        <mat-label>Moneda</mat-label>
-        <input matInput [value]="DescripcionMoneda" readonly [disabled]="bloqueado">
-      </mat-form-field>
-    </div>
-
-    <!-- FILA 4 -->
-    <div class="row three">
-      <mat-form-field appearance="fill">
-        <mat-label>Cantidad</mat-label>
-        <input matInput type="number"
-       [(ngModel)]="Cantidad"
-       (ngModelChange)="MontoManual = null"
-       [disabled]="bloqueado">
-      </mat-form-field>
-
-      <mat-form-field appearance="fill">
-        <mat-label>Precio Límite</mat-label>
-        <input matInput
-       type="number"
-       inputmode="decimal"
-       step="0.001"
-       min="0.001"
-       [(ngModel)]="Precio"
-       (blur)="formatearPrecio()"
-       [disabled]="esAMercado || bloqueado">
-      </mat-form-field>
-
-      <mat-checkbox
-        [(ngModel)]="esAMercado"
-        (change)="onTipoOrdenChange()"
-        [disabled]="bloqueado"
-        class="center">
-        A mercado
-      </mat-checkbox>
-    </div>
-
-    <div class="row two">
-
-  <mat-form-field appearance="fill">
-    <mat-label>Vigencia</mat-label>
-    <mat-select [(ngModel)]="tipoVigencia" (selectionChange)="onVigenciaChange()" [disabled]="bloqueado">
-      <mat-option value="Hoy">Por hoy</mat-option>
-      <mat-option value="Fecha">Hasta el</mat-option>
-      <mat-option value="Permanente">Permanente</mat-option>
-    </mat-select>
-  </mat-form-field>
-
-  <mat-form-field appearance="fill" *ngIf="tipoVigencia === 'Fecha'">
-    <mat-label>Seleccionar fecha</mat-label>
-    <input matInput [matDatepicker]="picker"
-           (dateChange)="setFechaVigencia($event.value)"
-           [min]="minFecha"
-           [disabled]="bloqueado">
-    <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
-    <mat-datepicker #picker></mat-datepicker>
-  </mat-form-field>
-
-</div>
-
-    <!-- FILA 5 -->
-    <div class="row one">
-  <mat-form-field appearance="fill">
-    <mat-label>Monto</mat-label>
-    <input matInput
-           type="number"
-           min="0"
-           [value]="monto ?? ''"
-           (input)="onMontoChange($event)"
-           [readonly]="Cantidad !== 0"
-           [disabled]="esAMercado && Cantidad !== 0">
-  </mat-form-field>
-</div>
-
-    <mat-card-actions class="actions-row">
-
-      <a class="action-link" (click)="volverLogin()">Volver</a>
-
-      <button
-        mat-raised-button
-        color="primary"       
-        (click)="grabar()"
-        [disabled]="bloqueado">
-        Enviar
-      </button>
-    </mat-card-actions>
-
+    <app-order-form
+      [markets]="markets"
+      marketControl="radio"
+      [submitting]="enviando"
+      (orderSubmitted)="submitOrder($event)"
+      (cancelled)="backToLogin()" />
   </div>
 </div>

@@ -1,0 +1,41 @@
+.row {
+  display: grid;
+  gap: 1rem;
+  align-items: start;
+}
+
+.row + .row {
+  margin-top: 0.8rem;
+}
+
+.row.one { grid-template-columns: 1fr; }
+.row.two { grid-template-columns: 1fr 1fr; }
+.row.three { grid-template-columns: 1fr 1fr 1fr; }
+
+mat-form-field { width: 100%; }
+
+mat-radio-group {
+  display: flex;
+  gap: 1.5rem;
+  min-height: 3.5rem;
+  align-items: center;
+}
+
+.center {
+  display: flex;
+  align-items: center;
+  height: 4rem;
+}
+
+.actions-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 0.5rem;
+}
+
+@media (max-width: 48rem) {
+  .row.two,
+  .row.three { grid-template-columns: 1fr; }
+}

@@ -17,18 +17,24 @@
   gap: 1rem;
 }
 
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
 .titulo-form {
   color: red;
   font-weight: 700;
   margin: 0;
 }
 
-.header,
-.header-actions {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 0.75rem;
+.mock-label {
+  display: inline-block;
+  margin-top: 0.3rem;
+  color: #6b7280;
+  font-size: 0.8rem;
 }
 
 .identity-grid {
@@ -43,8 +49,7 @@
   gap: 0.35rem;
 }
 
-.readonly-field label,
-.field-label {
+.readonly-field label {
   font-size: 0.9rem;
   color: #666;
 }
@@ -59,13 +64,24 @@
   font-weight: 500;
 }
 
-.client-select {
-  width: 100%;
-  margin-top: 0.35rem;
+.contact-field .value {
+  min-height: auto;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
+  gap: 0.15rem;
+  padding: 0;
+  background: transparent;
+}
+
+.secondary-label {
+  color: #666;
+  font-size: 0.9rem;
+  font-weight: 400;
+  margin-top: 0.2rem;
 }
 
 @media (max-width: 48rem) {
   .identity-grid { grid-template-columns: 1fr; }
-  .header { align-items: flex-start; }
-  .header-actions { flex-direction: column; align-items: stretch; }
+  .header { align-items: flex-start; flex-direction: column; }
 }

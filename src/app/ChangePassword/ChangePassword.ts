@@ -9,6 +9,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { RepresentanteService } from '../services/RepresentanteService';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { jwtDecode } from 'jwt-decode';
+import { normalizePortal, PORTAL_ROUTES, PortalType } from '../shared/portal-routes';
 
 type TokenClaims = {
   email: string;
@@ -44,6 +45,7 @@ export class ChangePasswordComponent implements OnInit {
   cambioExitoso = false;
 
   fromEmail = false;
+  portal: PortalType = 'representantes';
 
   constructor(
     private representanteService: RepresentanteService,
@@ -54,6 +56,7 @@ export class ChangePasswordComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    this.portal = normalizePortal(this.route.snapshot.data['portal']);
     const tokenUrl = this.route.snapshot.queryParamMap.get('token');
     const tokenLocal = localStorage.getItem('token');
 
@@ -124,7 +127,7 @@ export class ChangePasswordComponent implements OnInit {
             // Si vino desde el correo → redirección automática
             if (this.fromEmail) {
               setTimeout(() => {
-                this.router.navigate(['']);
+                this.router.navigateByUrl(PORTAL_ROUTES[this.portal].login);
               }, 3200);
             }
 
@@ -148,9 +151,9 @@ export class ChangePasswordComponent implements OnInit {
 
   volver() {
     if (this.fromEmail) {
-      this.router.navigate(['']);
+      this.router.navigateByUrl(PORTAL_ROUTES[this.portal].forgotPassword);
     } else {
-      this.router.navigate(['formulario']);
+      this.router.navigateByUrl(PORTAL_ROUTES[this.portal].orders);
     }
   }
 }

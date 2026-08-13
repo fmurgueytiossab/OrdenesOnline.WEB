@@ -1,6 +1,6 @@
 import { ChangeDetectorRef, Component } from '@angular/core';
 import { RepresentanteService } from '../services/RepresentanteService';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -8,6 +8,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { CommonModule } from '@angular/common';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { normalizePortal, PORTAL_ROUTES, PortalType } from '../shared/portal-routes';
 
 @Component({
   selector: 'app-login',
@@ -30,15 +31,20 @@ export class LoginComponent {
   password = '';
   error = '';
   isBlocked = false;
+  portal: PortalType = 'representantes';
+  pageTitle = 'Órdenes de representantes';
 
   constructor(
     private representanteService: RepresentanteService,
     private router: Router,
+    private route: ActivatedRoute,
     private cdr: ChangeDetectorRef,
     private snackBar: MatSnackBar
   ) {}
 
   ngOnInit() {
+  this.portal = normalizePortal(this.route.snapshot.data['portal']);
+  this.pageTitle = this.portal === 'clientes' ? 'Órdenes de clientes' : 'Órdenes de representantes';
     
   const correoGuardado = localStorage.getItem('correo');
   if (correoGuardado) {
@@ -61,7 +67,7 @@ login() {
         if (response.isValid) {
           localStorage.setItem('token', response.token);
           localStorage.setItem('correo', this.correo);
-          this.router.navigate(['formulario']);
+          this.router.navigateByUrl(PORTAL_ROUTES[this.portal].orders);
         } else {
           this.showError('⚠️ Correo o contraseña inválidos');
         }
@@ -91,7 +97,7 @@ private showError(message: string) {
 }
 
 goToForgotPassword() {
-  this.router.navigate(['forgot-password']);
+  this.router.navigateByUrl(PORTAL_ROUTES[this.portal].forgotPassword);
 }
 
 }

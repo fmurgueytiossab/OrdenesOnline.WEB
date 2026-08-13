@@ -1,6 +1,6 @@
 import { ChangeDetectorRef, Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -9,6 +9,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { EmailService } from '../services/EmailService';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { finalize } from 'rxjs/operators';
+import { normalizePortal, PORTAL_ROUTES, PortalType } from '../shared/portal-routes';
 
 @Component({
   selector: 'ForgotPassword',
@@ -29,13 +30,17 @@ export class ForgotPasswordComponent {
 
   correo = '';
   enviando = false;
+  portal: PortalType = 'representantes';
 
   constructor(
     private emailService: EmailService,
     private router: Router,
+    private route: ActivatedRoute,
     private snackBar: MatSnackBar,
     private cdr: ChangeDetectorRef,
-  ) {}
+  ) {
+    this.portal = normalizePortal(this.route.snapshot.data['portal']);
+  }
 
 enviar() {
 
@@ -104,6 +109,6 @@ enviar() {
   }
 
   volverLogin() {
-    this.router.navigate(['']);
+    this.router.navigateByUrl(PORTAL_ROUTES[this.portal].login);
   }
 }

@@ -1,0 +1,41 @@
+<div class="page-container">
+  <div class="form-container">
+    <div class="header">
+      <div>
+        <h2 class="titulo-form">Órdenes de clientes</h2>
+        <span class="mock-label">Datos temporales de prueba</span>
+      </div>
+      <button mat-stroked-button type="button" (click)="changePassword()">
+        Cambiar contraseña
+      </button>
+    </div>
+
+    <section class="identity-grid" aria-label="Datos del cliente">
+      <div class="readonly-field">
+        <label>Nombre del cliente</label>
+        <div class="value">{{ client.name }}</div>
+      </div>
+
+      <div class="readonly-field contact-field">
+        <label>Correo</label>
+        <div class="value">
+          <span>{{ client.email }}</span>
+          <span class="secondary-label">Celular</span>
+          <span>{{ client.phone }}</span>
+        </div>
+      </div>
+
+      <div class="readonly-field">
+        <label>Código de cliente</label>
+        <div class="value">{{ client.clientCode }}</div>
+      </div>
+    </section>
+
+    <app-order-form
+      [markets]="markets"
+      marketControl="select"
+      [submitting]="submitting"
+      (orderSubmitted)="submitOrder($event)"
+      (cancelled)="backToLogin()" />
+  </div>
+</div>

@@ -1,27 +1,19 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { ChangeDetectorRef, Component, ViewChild } from '@angular/core';
+import { MatButtonModule } from '@angular/material/button';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatSelectModule } from '@angular/material/select';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
-import { MatButtonModule } from '@angular/material/button';
-import { MatRadioModule } from '@angular/material/radio';
-import { MatCardModule } from '@angular/material/card';
-import { MatAutocompleteModule } from '@angular/material/autocomplete';
-import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
-import { MatCheckboxModule } from '@angular/material/checkbox';
-import { MatSelectModule } from '@angular/material/select';
-import { MatDatepickerModule } from '@angular/material/datepicker';
-import { MatNativeDateModule } from '@angular/material/core';
-
-import { RepresentanteService } from '../services/RepresentanteService';
-import { PropuestaService } from '../services/PropuestaService';
-import { ValorService } from '../services/ValorService';
+import { finalize, timeout } from 'rxjs';
 
 import { Propuesta } from '../Model/Propuesta';
-import { Valor } from '../Model/Valor';
-import { finalize, timeout } from 'rxjs';
+import { OrderFormComponent } from '../orders/components/order-form/order-form';
+import { MarketOption, OrderFormValue } from '../orders/models/order-form-value';
+import { PropuestaService } from '../services/PropuestaService';
+import { RepresentanteService } from '../services/RepresentanteService';
+import { PORTAL_ROUTES } from '../shared/portal-routes';
 
 @Component({
   selector: 'app-pagina-form',
@@ -31,345 +23,108 @@ import { finalize, timeout } from 'rxjs';
   imports: [
     CommonModule,
     FormsModule,
-    MatFormFieldModule,
-    MatInputModule,
     MatButtonModule,
-    MatRadioModule,
-    MatCardModule,
-    MatAutocompleteModule,
-    MatSnackBarModule,
-    MatCheckboxModule,
+    MatFormFieldModule,
     MatSelectModule,
-    MatDatepickerModule,
-    MatNativeDateModule
-  ]
+    MatSnackBarModule,
+    OrderFormComponent,
+  ],
 })
-export class FormularioComponent implements OnInit {
+export class FormularioComponent {
+  @ViewChild(OrderFormComponent) private orderForm?: OrderFormComponent;
 
-  NombreOperador = '';
-  CorreoCorporativo = '';
-  Cosabcli: string[] = [];
-  CosabcliSeleccionado = '';
-  Dni = '';
+  nombreOperador = '';
+  correoCorporativo = '';
+  codigosCliente: string[] = [];
+  codigoClienteSeleccionado = '';
+  dni = '';
+  enviando = false;
 
-  Tipo = 'Compra';
-  Cantidad: number | null = null;
-  Instrumento = '';
-
-  esAMercado = false;
-  TipoOrden = "Limite"
-  Precio: number | null = null;
-  Mercado = 'Local';
-
-  MontoManual: number | null = null;
-
-  Moneda = '';
-  DescripcionMoneda = '';
-
-  minFecha: Date = new Date(new Date().setDate(new Date().getDate() + 1));
-
-  valores: Valor[] = [];
-  valoresFiltrados: Valor[] = [];
-
-  bloqueado = false;
-
-  // Vigencia
-  tipoVigencia: string = 'Hoy';
+  readonly markets: MarketOption[] = [
+    { code: 'Local', name: 'Local' },
+    { code: 'Extranjero', name: 'Extranjero' },
+  ];
 
   constructor(
-    private representanteService: RepresentanteService,
-    private propuestaService: PropuestaService,
-    private valorService: ValorService,
-    private cdr: ChangeDetectorRef,
-    private router: Router,
-    private snackBar: MatSnackBar
-  ) {}
-
-ngOnInit(): void {
-  this.representanteService.getMe().subscribe({
-  next: (rep) => {
-    this.NombreOperador = rep.nombre;
-    this.CorreoCorporativo = rep.correoCorporativo;
-    this.Cosabcli = rep.cosabcli;
-    this.Dni = rep.dni;
-
-    if (this.Cosabcli.length > 0) {
-      this.CosabcliSeleccionado = this.Cosabcli[0];
-    }
-
-    this.cdr.detectChanges();
-  }
-});
-
-  this.valorService.getAll().subscribe({
-    next: (data) => {
-      this.valores = data;
-      this.valoresFiltrados = [];
-    }
-  });
-}
-
-get monto(): number | null {
-
-  if (this.Cantidad === null) {
-    return null;
+    private readonly representanteService: RepresentanteService,
+    private readonly propuestaService: PropuestaService,
+    private readonly router: Router,
+    private readonly snackBar: MatSnackBar,
+    private readonly cdr: ChangeDetectorRef,
+  ) {
+    this.loadRepresentative();
   }
 
-  // cantidad 0 → usuario define monto
-  if (this.Cantidad === 0) {
-    return this.MontoManual ?? null;
-  }
-
-  // cantidad > 0 y orden a mercado → monto null
-  if (this.Cantidad > 0 && this.esAMercado) {
-    return null;
-  }
-
-  // cantidad > 0 y precio existe → calcular
-  if (this.Cantidad > 0 && this.Precio !== null) {
-    return Number((this.Cantidad * this.Precio).toFixed(2));
-  }
-
-  return null;
-}
-
-onMontoChange(event: Event): void {
-  const valor = Number((event.target as HTMLInputElement).value);
-
-  if (valor < 0) {
-    this.MontoManual = 0;
-  } else {
-    this.MontoManual = valor;
-  }
-}
-
-  cambiarPassword(){
-    this.router.navigate(['change-password']);
-  }
-
-onVigenciaChange(): void {
-  if (this.tipoVigencia !== 'Fecha') {
-    this.fechaSeleccionada = null;
-  }
-}
-
-fechaSeleccionada: Date | null = null;
-setFechaVigencia(fecha: Date | null): void {
-  
-  this.fechaSeleccionada = fecha;
-}
-
-formatearPrecio(): void {
-
-  if (this.Precio === null) return;
-
-  if (this.Precio <= 0 || isNaN(this.Precio)) {
-    this.Precio = null;
-    return;
-  }
-
-  this.Precio = Number(this.Precio.toFixed(3));
-}
-
-  grabar(): void {
-
-    if (!this.CosabcliSeleccionado) {
-    this.snackBar.open('⚠️ Debe seleccionar un código de cliente', '', {
-      duration: 3000,
-      horizontalPosition: 'center',
-      verticalPosition: 'top',
-      panelClass: ['snack-error']
-    });
-    return;
-  }
-
-    if (!this.Tipo || !this.Instrumento || this.Cantidad === null || (!this.esAMercado && this.Precio === null) || !this.Mercado){
-      this.snackBar.open('⚠️ Complete todos los campos obligatorios', '', {
-        duration: 3000,
-        horizontalPosition: 'center',
-        verticalPosition: 'top',
-        panelClass: ['snack-error']
-      });
+  submitOrder(order: OrderFormValue): void {
+    if (!this.codigoClienteSeleccionado) {
+      this.showMessage('⚠️ Debe seleccionar un código de cliente', true);
       return;
     }
-
-    if (this.tipoVigencia === 'Fecha' && !this.fechaSeleccionada) {
-      this.snackBar.open('⚠️ Debe seleccionar la fecha de vigencia', '', {
-        duration: 3000,
-        horizontalPosition: 'center',
-        verticalPosition: 'top',
-        panelClass: ['snack-error']
-      });
-      return;
-    }
-
-    if (this.Cantidad < 0 || (!this.esAMercado && (this.Precio ?? 0) <= 0)) {
-      this.snackBar.open('⚠️ Cantidad y Precio deben ser mayores a cero', '', {
-        duration: 3000,
-        horizontalPosition: 'center',
-        verticalPosition: 'top',
-        panelClass: ['snack-error']
-      });
-      return;
-    }
-
-    if (this.Cantidad === 0 && this.Precio !== null) {
-  const monto = this.MontoManual ?? 0;
-
-  if (monto < this.Precio) {
-    this.snackBar.open('⚠️ El monto debe ser mayor o igual al precio', '', {
-      duration: 3000,
-      horizontalPosition: 'center',
-      verticalPosition: 'top',
-      panelClass: ['snack-error']
-    });
-    return;
-  }
-}
-
-if (this.Cantidad === 0 && this.MontoManual === null) {
-  this.snackBar.open('⚠️ Debe ingresar un monto', '', {
-    duration: 3000,
-    horizontalPosition: 'center',
-    verticalPosition: 'top',
-    panelClass: ['snack-error']
-  });
-  return;
-}
-
-    let vigenciaFinal = '';
-
-if (this.tipoVigencia === 'Hoy') {
-  vigenciaFinal = `Por hoy : ${new Date().toLocaleDateString('es-PE')}`;
-}
-
-if (this.tipoVigencia === 'Fecha' && this.fechaSeleccionada) {
-  const dia = this.fechaSeleccionada.getDate().toString().padStart(2, '0');
-  const mes = (this.fechaSeleccionada.getMonth() + 1).toString().padStart(2, '0');
-  const anio = this.fechaSeleccionada.getFullYear();
-
-  vigenciaFinal = `Hasta el ${dia}/${mes}/${anio}`;
-}
-
-if (this.tipoVigencia === 'Permanente') {
-  vigenciaFinal = 'Permanente';
-}
 
     const propuesta: Propuesta = {
-      NombreOperador: this.NombreOperador,
-      CorreoCorporativo: this.CorreoCorporativo,
-      Cosabcli: this.CosabcliSeleccionado,
-      Tipo: this.Tipo,
-      Cantidad: this.Cantidad,
-      Instrumento: this.Instrumento,
-      TipoOrden: this.TipoOrden,
-      Precio: this.Precio,
-      Monto: this.monto,
-      Mercado: this.Mercado,
-      Moneda: this.DescripcionMoneda,
-      Dni: this.Dni,
-      Vigencia: vigenciaFinal
+      NombreOperador: this.nombreOperador,
+      CorreoCorporativo: this.correoCorporativo,
+      Cosabcli: this.codigoClienteSeleccionado,
+      Tipo: order.tipo,
+      Cantidad: order.cantidad,
+      Instrumento: order.instrumento,
+      TipoOrden: order.tipoOrden,
+      Precio: order.precio,
+      Monto: order.monto,
+      Mercado: order.mercado,
+      Moneda: order.moneda,
+      Dni: this.dni,
+      Vigencia: order.vigencia,
     };
 
-    this.bloqueado = true;
+    this.sendProposal(propuesta);
+  }
 
-    this.propuestaService.registrar(propuesta)
-    .pipe(
-      timeout(8000),
-      finalize(() => {
-        this.bloqueado = false;
+  changePassword(): void {
+    this.router.navigateByUrl(PORTAL_ROUTES.representantes.changePassword);
+  }
+
+  backToLogin(): void {
+    this.router.navigateByUrl(PORTAL_ROUTES.representantes.login);
+  }
+
+  private loadRepresentative(): void {
+    this.representanteService.getMe().subscribe({
+      next: (representative) => {
+        this.nombreOperador = representative.nombre;
+        this.correoCorporativo = representative.correoCorporativo;
+        this.codigosCliente = representative.cosabcli;
+        this.codigoClienteSeleccionado = representative.cosabcli[0] ?? '';
+        this.dni = representative.dni;
         this.cdr.detectChanges();
-      })
-    )
-    .subscribe({
-      next: () => {
-        this.snackBar.open('✅ Propuesta enviada correctamente', '', {
-          duration: 4000,
-        horizontalPosition: 'center',
-        verticalPosition: 'top'        
-        });
-        this.limpiarFormulario();
       },
-      error: () => {
-        this.snackBar.open('❌ No hay respuesta del servidor', '', {
-          duration: 4000,
-        horizontalPosition: 'center',
-        verticalPosition: 'top',
-        panelClass: ['snack-error']
-        });
-      }
+      error: () => this.showMessage('❌ No se pudieron cargar los datos del representante', true),
     });
   }
 
-  limpiarFormulario(): void {
-    this.Tipo = 'Compra';
-    this.Cantidad = null;
-    this.Instrumento = '';
-    this.Precio = null;
-    this.Mercado = 'Local';
-    this.Moneda = '';
-    this.DescripcionMoneda = '';
-    this.valoresFiltrados = [];
-    this.bloqueado = false;
-    this.tipoVigencia = 'Hoy';
-
-    this.cdr.detectChanges();
+  private sendProposal(propuesta: Propuesta): void {
+    this.enviando = true;
+    this.propuestaService.registrar(propuesta).pipe(
+      timeout(8000),
+      finalize(() => {
+        this.enviando = false;
+        this.cdr.detectChanges();
+      }),
+    ).subscribe({
+      next: () => {
+        this.showMessage('✅ Propuesta enviada correctamente');
+        this.orderForm?.reset();
+      },
+      error: () => this.showMessage('❌ No hay respuesta del servidor', true),
+    });
   }
 
-  filtrarValores(texto: string): void {
-    if (!texto) {
-      this.valoresFiltrados = [];
-      return;
-    }
-
-    const filtro = texto.toLowerCase();
-
-    this.valoresFiltrados = this.valores.filter(v =>
-      v.mnemo.toLowerCase().includes(filtro)
-    );
-  }
-
-  validarInstrumento(): void {
-    const existe = this.valores.some(v =>
-      v.mnemo.toLowerCase() === this.Instrumento.toLowerCase()
-    );
-
-    if (!existe) {
-      this.Instrumento = '';
-      this.Moneda = '';
-      this.DescripcionMoneda = '';
-    }
-  }
-
-  onInstrumentoSeleccionado(mnemo: string): void {
-    this.Instrumento = mnemo;
-    this.valoresFiltrados = [];
-
-    const seleccionado = this.valores.find(v => v.mnemo === mnemo);
-
-    if (seleccionado) {
-      this.Moneda = seleccionado.comon;
-
-      if (this.Moneda === '01') {
-        this.DescripcionMoneda = 'Soles';
-      } else if (this.Moneda === '02') {
-        this.DescripcionMoneda = 'Dólares';
-      } else {
-        this.DescripcionMoneda = '';
-      }
-    }
-  }
-
-  volverLogin(): void {
-    this.router.navigate(['']);
-  }
-
-  onTipoOrdenChange(): void {
-    if (this.esAMercado) {
-      this.TipoOrden = 'Mercado';
-      this.Precio = null;
-    } else {
-      this.TipoOrden = 'Limite';
-    }
+  private showMessage(message: string, isError = false): void {
+    this.snackBar.open(message, '', {
+      duration: 4000,
+      horizontalPosition: 'center',
+      verticalPosition: 'top',
+      panelClass: isError ? ['snack-error'] : undefined,
+    });
   }
 }

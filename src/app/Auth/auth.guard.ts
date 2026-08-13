@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
-import { CanActivate, Router } from '@angular/router';
+import { ActivatedRouteSnapshot, CanActivate, Router, RouterStateSnapshot, UrlTree } from '@angular/router';
+import { PORTAL_ROUTES } from '../shared/portal-routes';
 
 @Injectable({
   providedIn: 'root'
@@ -8,21 +9,26 @@ export class AuthGuard implements CanActivate {
 
   constructor(private router: Router) {}
 
-  canActivate(): boolean {
+  canActivate(_route: ActivatedRouteSnapshot, state: RouterStateSnapshot): boolean | UrlTree {
     const token = localStorage.getItem('token');
 
     if (!token) {
-      this.router.navigate(['']);
-      return false;
+      return this.loginRedirect(state.url);
     }
 
     if (this.isTokenExpired(token)) {
       localStorage.removeItem('token');
-      this.router.navigate(['']);
-      return false;
+      return this.loginRedirect(state.url);
     }
 
     return true;
+  }
+
+  private loginRedirect(url: string): UrlTree {
+    const loginUrl = url.startsWith('/Clientes')
+      ? PORTAL_ROUTES.clientes.login
+      : PORTAL_ROUTES.representantes.login;
+    return this.router.parseUrl(loginUrl);
   }
 
   private isTokenExpired(token: string): boolean {

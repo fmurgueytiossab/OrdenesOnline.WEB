@@ -1,0 +1,96 @@
+<div class="row two">
+  <mat-radio-group [(ngModel)]="tipo" [disabled]="submitting" aria-label="Tipo de operación">
+    <mat-radio-button value="Compra">Compra</mat-radio-button>
+    <mat-radio-button value="Venta">Venta</mat-radio-button>
+  </mat-radio-group>
+
+  @if (marketControl === 'radio') {
+    <mat-radio-group [(ngModel)]="mercado" [disabled]="submitting" aria-label="Mercado">
+      @for (option of markets; track option.code) {
+        <mat-radio-button [value]="option.code">{{ option.name }}</mat-radio-button>
+      }
+    </mat-radio-group>
+  } @else {
+    <mat-form-field appearance="fill">
+      <mat-label>Mercado</mat-label>
+      <mat-select [(ngModel)]="mercado" [disabled]="submitting">
+        @for (option of markets; track option.code) {
+          <mat-option [value]="option.code">{{ option.name }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+  }
+</div>
+
+<div class="row two">
+  <mat-form-field appearance="fill">
+    <mat-label>Instrumento</mat-label>
+    <input matInput [(ngModel)]="instrumento"
+           (ngModelChange)="filterValues($event)"
+           (blur)="validateInstrument()"
+           [matAutocomplete]="auto"
+           [disabled]="submitting">
+    <mat-autocomplete #auto="matAutocomplete" (optionSelected)="selectInstrument($event.option.value)">
+      @for (value of valoresFiltrados; track value.cosabval) {
+        <mat-option [value]="value.mnemo">{{ value.mnemo }}</mat-option>
+      }
+    </mat-autocomplete>
+  </mat-form-field>
+
+  <mat-form-field appearance="fill">
+    <mat-label>Moneda</mat-label>
+    <input matInput [value]="descripcionMoneda" readonly [disabled]="submitting">
+  </mat-form-field>
+</div>
+
+<div class="row three">
+  <mat-form-field appearance="fill">
+    <mat-label>Cantidad</mat-label>
+    <input matInput type="number" [(ngModel)]="cantidad" (ngModelChange)="montoManual = null" [disabled]="submitting">
+  </mat-form-field>
+
+  <mat-form-field appearance="fill">
+    <mat-label>Precio límite</mat-label>
+    <input matInput type="number" inputmode="decimal" step="0.001" min="0.001"
+           [(ngModel)]="precio" (blur)="formatPrice()" [disabled]="esAMercado || submitting">
+  </mat-form-field>
+
+  <mat-checkbox [(ngModel)]="esAMercado" (change)="updateOrderType()" [disabled]="submitting" class="center">
+    A mercado
+  </mat-checkbox>
+</div>
+
+<div class="row two">
+  <mat-form-field appearance="fill">
+    <mat-label>Vigencia</mat-label>
+    <mat-select [(ngModel)]="tipoVigencia" (selectionChange)="updateValidity()" [disabled]="submitting">
+      <mat-option value="Hoy">Por hoy</mat-option>
+      <mat-option value="Fecha">Hasta el</mat-option>
+      <mat-option value="Permanente">Permanente</mat-option>
+    </mat-select>
+  </mat-form-field>
+
+  @if (tipoVigencia === 'Fecha') {
+    <mat-form-field appearance="fill">
+      <mat-label>Seleccionar fecha</mat-label>
+      <input matInput [matDatepicker]="picker" [(ngModel)]="fechaSeleccionada" [min]="minFecha" [disabled]="submitting">
+      <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
+      <mat-datepicker #picker></mat-datepicker>
+    </mat-form-field>
+  }
+</div>
+
+<div class="row one">
+  <mat-form-field appearance="fill">
+    <mat-label>Monto</mat-label>
+    <input matInput type="number" min="0" [value]="monto ?? ''" (input)="updateAmount($event)"
+           [readonly]="cantidad !== 0" [disabled]="submitting || (esAMercado && cantidad !== 0)">
+  </mat-form-field>
+</div>
+
+<div class="actions-row">
+  <button mat-button type="button" (click)="cancelled.emit()" [disabled]="submitting">Volver</button>
+  <button mat-raised-button color="primary" type="button" (click)="submit()" [disabled]="submitting">
+    {{ submitting ? 'Enviando…' : 'Enviar' }}
+  </button>
+</div>
