@@ -7,6 +7,7 @@ import { LoginComponent } from './login/login';
 import { ClientPortalLayoutComponent } from './orders/layouts/client-portal-layout/client-portal-layout';
 import { ClientOrdersComponent } from './orders/pages/client-orders/client-orders';
 import { OrderTrackingComponent } from './orders/pages/order-tracking/order-tracking';
+import { ProposalReviewComponent } from './orders/pages/proposal-review/proposal-review';
 import { PruebaComponent } from './prueba/prueba';
 
 export const routes: Routes = [
@@ -58,6 +59,10 @@ export const routes: Routes = [
     path: 'Clientes/change-password',
     component: ChangePasswordComponent,
     data: { portal: 'clientes' },
+  },
+  {
+    path: 'Clientes/propuestas/revision',
+    component: ProposalReviewComponent,
   },
   {
     path: 'Clientes',

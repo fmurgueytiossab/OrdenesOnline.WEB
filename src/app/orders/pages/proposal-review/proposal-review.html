@@ -1,0 +1,177 @@
+<main class="review-page">
+  <section class="review-shell" aria-labelledby="review-title">
+    <header class="brand-header">
+      <div class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24">
+          <path d="M5 17V9m5 8V5m5 12v-6m4 6V7" />
+        </svg>
+      </div>
+      <div>
+        <strong>Seminario SAB</strong>
+        <span>Portal de operaciones</span>
+      </div>
+    </header>
+
+    @if (!hasReviewAccess) {
+      <section class="access-state invalid-access" role="alert">
+        <span class="state-icon" aria-hidden="true">!</span>
+        <span class="eyebrow danger">Acceso no disponible</span>
+        <h1 id="review-title">El enlace de revisión no es válido</h1>
+        <p>El enlace está incompleto, expiró o ya fue utilizado. Solicita un nuevo correo para revisar la propuesta.</p>
+      </section>
+    } @else {
+      <div class="demo-notice" role="note">
+        <span aria-hidden="true">i</span>
+        <p><strong>Vista demostrativa.</strong> Las decisiones todavía no se envían al servidor.</p>
+      </div>
+
+      <header class="review-heading">
+        <div>
+          <span class="eyebrow">Revisión de propuesta</span>
+          <h1 id="review-title">Confirma los datos de tu operación</h1>
+          <p>Revisa cuidadosamente la información recibida antes de tomar una decisión.</p>
+        </div>
+        <span class="status-pill" [attr.data-status]="decision">
+          <span aria-hidden="true"></span>
+          {{ decision === 'PENDING' ? 'Pendiente de revisión' : decision === 'ACCEPTED' ? 'Aceptada' : 'Denegada' }}
+        </span>
+      </header>
+
+      @if (decision !== 'PENDING') {
+        <section class="decision-result" [class.rejected]="decision === 'REJECTED'" role="status">
+          <span class="result-icon" aria-hidden="true">{{ decision === 'ACCEPTED' ? '✓' : '×' }}</span>
+          <div>
+            <strong>{{ decision === 'ACCEPTED' ? 'Propuesta aceptada' : 'Propuesta denegada' }}</strong>
+            <p>
+              {{ decision === 'ACCEPTED'
+                ? 'Registramos tu conformidad en esta demostración.'
+                : 'Registramos tu decisión y el motivo indicado en esta demostración.' }}
+            </p>
+          </div>
+        </section>
+      }
+
+      <article class="proposal-card">
+        <header class="proposal-header">
+          <div>
+            <span>Número de propuesta</span>
+            <strong>#{{ proposal.proposalNumber }}</strong>
+          </div>
+          <div class="received-at">
+            <span>Solicitud recibida</span>
+            <strong>{{ proposal.receivedAt | date: 'dd/MM/yyyy, HH:mm' }}</strong>
+          </div>
+        </header>
+
+        <div class="proposal-summary">
+          <div class="operation-symbol" [class.sell]="proposal.operation === 'Venta'" aria-hidden="true">
+            {{ proposal.operation === 'Compra' ? 'C' : 'V' }}
+          </div>
+          <div>
+            <span>{{ proposal.operation }}</span>
+            <strong>{{ proposal.instrument }}</strong>
+            <small>{{ proposal.market }} · Orden {{ proposal.orderType | lowercase }}</small>
+          </div>
+          <div class="amount-summary">
+            <span>Monto de la operación</span>
+            <strong>{{ proposal.amount | number: '1.2-2' }}</strong>
+            <small>{{ proposal.currency }}</small>
+          </div>
+        </div>
+
+        <section class="detail-section" aria-labelledby="operation-detail-title">
+          <h2 id="operation-detail-title">Detalle de la operación</h2>
+          <dl class="detail-grid">
+            <div><dt>Operación</dt><dd>{{ proposal.operation }}</dd></div>
+            <div><dt>Instrumento</dt><dd>{{ proposal.instrument }}</dd></div>
+            <div><dt>Mercado</dt><dd>{{ proposal.market }}</dd></div>
+            <div><dt>Tipo de orden</dt><dd>{{ proposal.orderType }}</dd></div>
+            <div><dt>Cantidad</dt><dd>{{ proposal.quantity | number: '1.0-0' }}</dd></div>
+            <div><dt>Precio</dt><dd>{{ proposal.price | number: '1.2-2' }} {{ proposal.currency }}</dd></div>
+            <div><dt>Monto</dt><dd>{{ proposal.amount | number: '1.2-2' }} {{ proposal.currency }}</dd></div>
+            <div><dt>Moneda</dt><dd class="capitalize">{{ proposal.currency }}</dd></div>
+            <div><dt>Vigencia</dt><dd>{{ proposal.validity }}</dd></div>
+            <div><dt>Código de cliente</dt><dd>{{ proposal.clientCode }}</dd></div>
+          </dl>
+        </section>
+
+        <aside class="legal-notice">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="12" cy="12" r="9" />
+            <path d="M12 10v6m0-9h.01" />
+          </svg>
+          <p>Esta pantalla confirma la recepción de tu solicitud; no constituye una confirmación de ejecución.</p>
+        </aside>
+
+        <footer class="review-actions">
+          <p>¿Los datos de la propuesta son correctos?</p>
+          <div>
+            <button
+              type="button"
+              class="reject-button"
+              [disabled]="decision !== 'PENDING'"
+              (click)="openRejectConfirmation()">
+              Denegar propuesta
+            </button>
+            <button
+              type="button"
+              class="accept-button"
+              [disabled]="decision !== 'PENDING'"
+              (click)="openAcceptConfirmation()">
+              Aceptar propuesta
+            </button>
+          </div>
+        </footer>
+      </article>
+
+      <p class="security-note">
+        <span aria-hidden="true">●</span>
+        Acceso protegido mediante un enlace personal de revisión.
+      </p>
+    }
+  </section>
+</main>
+
+@if (confirmationMode) {
+  <div class="dialog-backdrop" (click)="closeConfirmation()">
+    <section
+      class="confirmation-dialog"
+      role="dialog"
+      aria-modal="true"
+      [attr.aria-labelledby]="confirmationMode === 'accept' ? 'accept-title' : 'reject-title'"
+      (click)="$event.stopPropagation()">
+      <button class="dialog-close" type="button" aria-label="Cerrar" (click)="closeConfirmation()">×</button>
+
+      @if (confirmationMode === 'accept') {
+        <span class="dialog-icon accept-icon" aria-hidden="true">✓</span>
+        <span class="eyebrow">Confirmar aceptación</span>
+        <h2 id="accept-title">¿Deseas aceptar la propuesta #{{ proposal.proposalNumber }}?</h2>
+        <p>Confirmas que revisaste los datos mostrados y que estás conforme con la solicitud.</p>
+        <div class="dialog-actions">
+          <button type="button" class="secondary-button" (click)="closeConfirmation()">Volver</button>
+          <button type="button" class="accept-button" (click)="confirmAccept()">Sí, aceptar</button>
+        </div>
+      } @else {
+        <span class="dialog-icon reject-icon" aria-hidden="true">×</span>
+        <span class="eyebrow danger">Denegar propuesta</span>
+        <h2 id="reject-title">Indica el motivo de tu decisión</h2>
+        <p>Esta información permitirá revisar la solicitud antes de generar una nueva propuesta.</p>
+        <label class="reason-field">
+          <span>Motivo <strong>*</strong></span>
+          <textarea
+            [(ngModel)]="rejectionReason"
+            rows="4"
+            maxlength="300"
+            placeholder="Ej. La cantidad indicada no es correcta"></textarea>
+          <small>{{ rejectionReason.length }}/300 · mínimo 5 caracteres</small>
+        </label>
+        <div class="dialog-actions">
+          <button type="button" class="secondary-button" (click)="closeConfirmation()">Cancelar</button>
+          <button type="button" class="reject-button" [disabled]="!canReject" (click)="confirmReject()">
+            Confirmar denegación
+          </button>
+        </div>
+      }
+    </section>
+  </div>
+}

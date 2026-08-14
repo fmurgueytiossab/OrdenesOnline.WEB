@@ -45,4 +45,19 @@ describe('ChangePasswordComponent validation', () => {
       expect.objectContaining({ panelClass: ['snack-error'] }),
     );
   });
+
+  it('requires at least one special character', () => {
+    const { component, service, snackBar } = createComponent();
+    component.password = 'clave1234';
+    component.confirmPassword = 'clave1234';
+
+    component.cambiarPassword();
+
+    expect(service.updatePassword).not.toHaveBeenCalled();
+    expect(snackBar.open).toHaveBeenCalledWith(
+      'La contraseña debe incluir al menos un carácter especial',
+      'Cerrar',
+      expect.objectContaining({ panelClass: ['snack-error'] }),
+    );
+  });
 });

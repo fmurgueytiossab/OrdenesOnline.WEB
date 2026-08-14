@@ -12,6 +12,7 @@ export const PORTAL_ROUTES = {
     login: '/Clientes',
     orders: '/Clientes/ordenes',
     tracking: '/Clientes/seguimiento',
+    proposalReview: '/Clientes/propuestas/revision',
     accountPassword: '/Clientes/cuenta/contrasena',
     forgotPassword: '/Clientes/forgot-password',
     changePassword: '/Clientes/change-password',

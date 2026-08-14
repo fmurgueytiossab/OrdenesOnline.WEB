@@ -25,28 +25,55 @@
           <h2 id="client-data-title">Datos del cliente</h2>
           <p>La orden se registrará para la siguiente cuenta.</p>
         </div>
-        <span class="client-badge">CLI</span>
       </div>
 
-      <div class="identity-grid">
+      <div class="identity-grid" [class.loading]="loadingClient" [attr.aria-busy]="loadingClient">
         <div class="readonly-field">
           <label>Nombre del cliente</label>
-          <div class="value">{{ client.name }}</div>
+          <div class="value">{{ loadingClient ? 'Cargando…' : (client.name || 'No disponible') }}</div>
         </div>
 
         <div class="readonly-field">
-          <label>Correo</label>
-          <div class="value">{{ client.email }}</div>
+          <label>Correo electrónico</label>
+          <div class="value">{{ loadingClient ? 'Cargando…' : (client.email || 'No disponible') }}</div>
         </div>
 
         <div class="readonly-field">
-          <label>Celular</label>
+          <label>Número de celular</label>
           <div class="value">{{ client.phone }}</div>
         </div>
 
-        <div class="readonly-field">
+        <div class="readonly-field code-field">
           <label>Código de cliente</label>
-          <div class="value">{{ client.clientCode }}</div>
+          @if (loadingClient) {
+            <div class="value">Cargando…</div>
+          } @else if (client.clientCodes.length <= 1) {
+            <div class="value">{{ selectedClientCode || 'No disponible' }}</div>
+          } @else {
+            <mat-select
+              class="inline-client-select"
+              [(ngModel)]="selectedClientCode"
+              [disabled]="submitting"
+              aria-label="Código de cliente"
+              panelClass="order-select-panel">
+              <mat-select-trigger>
+                <span class="inline-select-value">
+                  <strong>{{ selectedClientCode }}</strong>
+                </span>
+              </mat-select-trigger>
+              @for (code of client.clientCodes; track code) {
+                <mat-option [value]="code">
+                  <span class="order-option-row">
+                    <span class="order-option-symbol">CL</span>
+                    <span class="order-option-copy">
+                      <strong>{{ code }}</strong>
+                      <small>Código de cliente</small>
+                    </span>
+                  </span>
+                </mat-option>
+              }
+            </mat-select>
+          }
         </div>
       </div>
     </section>

@@ -1,20 +1,23 @@
+import { CommonModule } from '@angular/common';
 import { ChangeDetectorRef, Component, ViewChild } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { MatSelectModule } from '@angular/material/select';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { Router } from '@angular/router';
 import { finalize, timeout } from 'rxjs';
 
-import { Propuesta } from '../../../Model/Propuesta';
-import { PropuestaService } from '../../../services/PropuestaService';
+import { PropuestaCliente } from '../../../Model/PropuestaCliente';
+import { PropuestaClienteService } from '../../../services/PropuestaClienteService';
+import { RepresentanteService } from '../../../services/RepresentanteService';
 import { OrderFormComponent } from '../../components/order-form/order-form';
 import { MarketOption, OrderFormValue } from '../../models/order-form-value';
 import { ClientOrderTrackingService } from '../../services/client-order-tracking.service';
 
-interface MockClient {
+interface ClientIdentity {
   name: string;
   email: string;
   phone: string;
-  clientCode: string;
-  documentNumber: string;
+  clientCodes: string[];
 }
 
 @Component({
@@ -22,22 +25,23 @@ interface MockClient {
   standalone: true,
   templateUrl: './client-orders.html',
   styleUrls: ['./client-orders.css'],
-  imports: [MatSnackBarModule, OrderFormComponent],
+  imports: [CommonModule, FormsModule, MatSelectModule, MatSnackBarModule, OrderFormComponent],
 })
 export class ClientOrdersComponent {
   @ViewChild(OrderFormComponent) private orderForm?: OrderFormComponent;
 
   submitting = false;
+  loadingClient = true;
   readonly sourceOrderId: string | null;
   readonly initialOrder: Partial<OrderFormValue> | null;
 
-  readonly client: MockClient = {
-    name: 'Cliente de prueba',
-    email: 'cliente.prueba@correo.com',
-    phone: '+51 999 999 999',
-    clientCode: 'CLI-MOCK-001',
-    documentNumber: '00000000',
+  client: ClientIdentity = {
+    name: '',
+    email: localStorage.getItem('correo') ?? '',
+    phone: '997 332 635',
+    clientCodes: [],
   };
+  selectedClientCode = '';
 
   readonly markets: MarketOption[] = [
     { code: 'BVL', name: 'BVL' },
@@ -47,10 +51,11 @@ export class ClientOrdersComponent {
   ];
 
   constructor(
-    private readonly propuestaService: PropuestaService,
+    private readonly propuestaClienteService: PropuestaClienteService,
     private readonly router: Router,
     private readonly snackBar: MatSnackBar,
     private readonly cdr: ChangeDetectorRef,
+    private readonly representanteService: RepresentanteService,
     trackingService: ClientOrderTrackingService,
   ) {
     this.sourceOrderId = this.router.parseUrl(this.router.url).queryParams['sourceOrderId'] ?? null;
@@ -68,30 +73,32 @@ export class ClientOrdersComponent {
           vigencia: sourceOrder.validity,
         }
       : null;
+
+    this.loadClientIdentity();
   }
 
   submitOrder(order: OrderFormValue): void {
-    // Adaptador temporal al contrato actual. Se reemplazará por ClientOrderRequest
-    // cuando esté disponible POST /api/client-orders.
-    const propuesta: Propuesta = {
-      NombreOperador: this.client.name,
-      CorreoCorporativo: this.client.email,
-      Cosabcli: this.client.clientCode,
-      Tipo: order.tipo,
-      Cantidad: order.cantidad,
-      Instrumento: order.instrumento,
-      TipoOrden: order.tipoOrden,
-      Precio: order.precio,
-      Monto: order.monto,
-      Mercado: order.mercado,
-      Moneda: order.moneda,
-      Dni: this.client.documentNumber,
-      Vigencia: order.vigencia,
-      SourceOrderId: this.sourceOrderId ?? undefined,
+    if (!this.selectedClientCode) {
+      this.showMessage('Debe seleccionar un código de cliente', true);
+      return;
+    }
+
+    const propuesta: PropuestaCliente = {
+      correoCliente: this.client.email,
+      cosabcli: this.selectedClientCode,
+      tipo: order.tipo,
+      tipoOrden: order.tipoOrden,
+      cantidad: order.cantidad,
+      instrumento: order.instrumento,
+      precio: order.precio,
+      monto: order.monto,
+      mercado: order.mercado,
+      moneda: order.moneda.toLocaleLowerCase('es-PE'),
+      vigencia: order.vigencia,
     };
 
     this.submitting = true;
-    this.propuestaService.registrar(propuesta).pipe(
+    this.propuestaClienteService.registrar(propuesta).pipe(
       timeout(8000),
       finalize(() => {
         this.submitting = false;
@@ -108,6 +115,27 @@ export class ClientOrdersComponent {
 
   clearOrderForm(): void {
     this.orderForm?.reset();
+  }
+
+  private loadClientIdentity(): void {
+    // Adaptador temporal: se reemplazará por GET /Cliente/me cuando el API lo exponga.
+    this.representanteService.getMe().pipe(
+      finalize(() => {
+        this.loadingClient = false;
+        this.cdr.detectChanges();
+      }),
+    ).subscribe({
+      next: (account) => {
+        this.client = {
+          name: account.nombre,
+          email: account.correoCorporativo,
+          phone: '997 332 635',
+          clientCodes: account.cosabcli,
+        };
+        this.selectedClientCode = account.cosabcli[0] ?? '';
+      },
+      error: () => this.showMessage('No se pudieron cargar los datos del cliente', true),
+    });
   }
 
   private showMessage(message: string, isError = false): void {

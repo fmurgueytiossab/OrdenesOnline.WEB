@@ -69,6 +69,10 @@ export class ChangePasswordComponent implements OnInit {
     return /[A-Za-z]/.test(this.password) && /\d/.test(this.password);
   }
 
+  get hasSpecialCharacter(): boolean {
+    return /[^A-Za-z0-9\s]/.test(this.password);
+  }
+
   get accountInitial(): string {
     return this.portal === 'clientes' ? 'C' : 'R';
   }
@@ -121,6 +125,11 @@ export class ChangePasswordComponent implements OnInit {
 
     if (!this.hasLettersAndNumbers) {
       this.showValidationMessage('La contraseña debe combinar letras y números');
+      return;
+    }
+
+    if (!this.hasSpecialCharacter) {
+      this.showValidationMessage('La contraseña debe incluir al menos un carácter especial');
       return;
     }
 

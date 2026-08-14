@@ -64,7 +64,7 @@
 .operation-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .instrument-grid {
   grid-template-columns: 1.45fr 0.75fr;
-  padding-bottom: 0.45rem;
+  padding-bottom: 0.85rem;
 }
 .conditions-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: start; }
 .validity-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
@@ -111,7 +111,7 @@
 }
 
 :host ::ng-deep .instrument-grid .mat-mdc-form-field-subscript-wrapper {
-  margin-top: 0.15rem;
+  margin-top: 0.25rem;
 }
 
 .control-label {
@@ -202,6 +202,15 @@
 }
 
 .currency-field input { color: #475467; font-weight: 700; }
+
+.amount-field input {
+  color: #475467;
+  font-weight: 700;
+}
+
+:host ::ng-deep .amount-field:has(input[readonly]) .mat-mdc-text-field-wrapper {
+  background: #f8fafc;
+}
 
 .market-toggle {
   min-height: 4.55rem;
