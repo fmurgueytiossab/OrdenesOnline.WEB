@@ -126,15 +126,50 @@
   align-items: stretch;
 }
 
-.identity-grid.loading .readonly-field {
-  background: linear-gradient(100deg, #f8fafc 30%, #f1f5f9 50%, #f8fafc 70%);
-  background-size: 220% 100%;
-  animation: client-loading 1.4s ease-in-out infinite;
+.client-search-control {
+  min-width: 0;
+}
+
+.client-search-field {
+  width: 100%;
+}
+
+:host ::ng-deep .client-search-field .mat-mdc-form-field-subscript-wrapper {
+  min-height: 1rem;
+}
+
+.client-option {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  line-height: 1.25;
+}
+
+.client-option strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.client-option small {
+  color: #667085;
+  font-size: 0.7rem;
+}
+
+.search-status {
+  display: block;
+  margin: -0.7rem 0.85rem 0;
+  color: #667085;
+  font-size: 0.68rem;
+}
+
+.search-status.error {
+  color: #b42318;
 }
 
 .readonly-field {
   min-width: 0;
-  height: 4.35rem;
+  height: auto;
   min-height: 4.35rem;
   display: flex;
   flex-direction: column;
@@ -143,6 +178,80 @@
   background: #f8fafc;
   border: 1px solid #eef1f5;
   border-radius: 0.7rem;
+}
+
+.order-form-shell {
+  position: relative;
+  border-radius: 0.9rem;
+  overflow: hidden;
+}
+
+.order-form-shell app-order-form {
+  display: block;
+}
+
+.order-blocking-glass {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  display: grid;
+  place-items: start center;
+  padding: clamp(4rem, 12vh, 8rem) 1.25rem 2rem;
+  background: rgba(241, 245, 249, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.78);
+  backdrop-filter: blur(9px) saturate(75%);
+  -webkit-backdrop-filter: blur(9px) saturate(75%);
+  cursor: not-allowed;
+}
+
+.glass-message {
+  width: min(30rem, 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 1.4rem 1.5rem;
+  color: #344054;
+  text-align: center;
+  background: rgba(255, 255, 255, 0.78);
+  border: 1px solid rgba(255, 255, 255, 0.95);
+  border-radius: 1rem;
+  box-shadow: 0 1rem 2.5rem rgba(16, 24, 40, 0.14);
+}
+
+.glass-message strong {
+  color: #b42318;
+  font-size: 1rem;
+}
+
+.glass-message > span:not(.glass-lock) {
+  font-size: 0.84rem;
+  line-height: 1.5;
+}
+
+.glass-message small {
+  color: #667085;
+  font-size: 0.72rem;
+}
+
+.glass-lock {
+  width: 2.7rem;
+  height: 2.7rem;
+  display: grid;
+  place-items: center;
+  color: #b42318;
+  background: #fee4e2;
+  border-radius: 50%;
+}
+
+.glass-lock svg {
+  width: 1.35rem;
+  height: 1.35rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
 }
 
 .readonly-field label,
@@ -162,33 +271,66 @@
   overflow-wrap: anywhere;
 }
 
-.inline-client-select {
-  width: 100%;
-  height: 1.25rem;
-  min-height: 1.25rem;
-  display: flex;
-  align-items: center;
-  color: #344054;
-  font-size: 0.82rem;
-  font-weight: 750;
+.recipient-help {
+  margin-top: 0.2rem;
+  color: #667085;
+  font-size: 0.62rem;
 }
 
-:host ::ng-deep .inline-client-select .mat-mdc-select-trigger {
-  height: 1.25rem;
-  align-items: center;
-}
-
-.inline-select-value {
+.readonly-disclosure {
   width: 100%;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 0.5rem;
+  padding: 0;
+  color: #344054;
+  text-align: left;
+  background: transparent;
+  border: 0;
+  font-size: 0.82rem;
+  font-weight: 750;
+  cursor: pointer;
 }
 
-@keyframes client-loading {
-  from { background-position: 100% 0; }
-  to { background-position: -100% 0; }
+.readonly-disclosure > span:first-child {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.disclosure-arrow {
+  flex: 0 0 auto;
+  color: #667085;
+  font-size: 1rem;
+}
+
+:host ::ng-deep .readonly-contact-menu.mat-mdc-menu-panel {
+  min-width: 17rem;
+  max-width: min(24rem, calc(100vw - 2rem));
+  border-radius: 0.75rem;
+}
+
+:host ::ng-deep .contact-menu-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  padding: 0.85rem 1rem;
+  color: #344054;
+}
+
+:host ::ng-deep .contact-menu-content strong {
+  color: #667085;
+  font-size: 0.68rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+:host ::ng-deep .contact-menu-content span {
+  overflow-wrap: anywhere;
+  font-size: 0.82rem;
+  font-weight: 700;
 }
 
 @media (max-width: 64rem) {

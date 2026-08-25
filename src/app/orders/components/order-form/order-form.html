@@ -17,7 +17,7 @@
             role="radio"
             [attr.aria-checked]="tipo === 'Compra'"
             [class.active]="tipo === 'Compra'"
-            [disabled]="submitting"
+            [disabled]="submitting || disabled"
             (click)="tipo = 'Compra'">
             <span class="operation-dot buy" aria-hidden="true">↗</span>
             <span><strong>Compra</strong><small>Adquirir valores</small></span>
@@ -27,7 +27,7 @@
             role="radio"
             [attr.aria-checked]="tipo === 'Venta'"
             [class.active]="tipo === 'Venta'"
-            [disabled]="submitting"
+            [disabled]="submitting || disabled"
             (click)="tipo = 'Venta'">
             <span class="operation-dot sell" aria-hidden="true">↘</span>
             <span><strong>Venta</strong><small>Vender posiciones</small></span>
@@ -45,7 +45,7 @@
                 role="radio"
                 [attr.aria-checked]="mercado === option.code"
                 [class.active]="mercado === option.code"
-                [disabled]="submitting"
+                [disabled]="submitting || disabled"
                 (click)="mercado = option.code">
                 <span><strong>{{ option.name }}</strong><small>Seleccionar</small></span>
               </button>
@@ -59,7 +59,7 @@
             <mat-label>Selecciona un canal</mat-label>
             <mat-select
               [(ngModel)]="mercado"
-              [disabled]="submitting"
+              [disabled]="submitting || disabled"
               panelClass="order-select-panel">
               <mat-select-trigger>
                 <span class="order-select-trigger">
@@ -114,7 +114,7 @@
               (ngModelChange)="filterValues($event)"
               (blur)="validateInstrument()"
               [matAutocomplete]="auto"
-              [disabled]="submitting"
+              [disabled]="submitting || disabled"
               placeholder="Ej. AAPL">
             <mat-autocomplete #auto="matAutocomplete" (optionSelected)="selectInstrument($event.option.value)">
               @for (value of valoresFiltrados; track value.cosabval) {
@@ -126,7 +126,7 @@
 
           <mat-form-field appearance="outline" class="form-field currency-field">
             <mat-label>Moneda</mat-label>
-            <input matInput [value]="descripcionMoneda" readonly [disabled]="submitting" placeholder="Automática">
+            <input matInput [value]="descripcionMoneda" readonly [disabled]="submitting || disabled" placeholder="Automática">
             <mat-hint>Se completa al elegir el instrumento</mat-hint>
           </mat-form-field>
         </div>
@@ -147,7 +147,7 @@
               min="0"
               [(ngModel)]="cantidad"
               (ngModelChange)="montoManual = null"
-              [disabled]="submitting"
+              [disabled]="submitting || disabled"
               placeholder="0">
           </mat-form-field>
 
@@ -161,7 +161,7 @@
               min="0.001"
               [(ngModel)]="precio"
               (blur)="formatPrice()"
-              [disabled]="esAMercado || submitting"
+              [disabled]="esAMercado || submitting || disabled"
               placeholder="0.000">
             <mat-hint>{{ esAMercado ? 'No aplica para una orden a mercado' : 'Precio máximo o mínimo de ejecución' }}</mat-hint>
           </mat-form-field>
@@ -170,7 +170,7 @@
             <mat-checkbox
               [(ngModel)]="esAMercado"
               (change)="updateOrderType()"
-              [disabled]="submitting">
+              [disabled]="submitting || disabled">
               A mercado
             </mat-checkbox>
             <small>Se ejecutará al mejor precio disponible.</small>
@@ -195,7 +195,7 @@
         <mat-select
           [(ngModel)]="tipoVigencia"
           (selectionChange)="updateValidity()"
-          [disabled]="submitting"
+          [disabled]="submitting || disabled"
           panelClass="order-select-panel">
           <mat-select-trigger>
             <span class="order-select-trigger compact">
@@ -206,10 +206,10 @@
               </span>
             </span>
           </mat-select-trigger>
-          @for (validity of ['Hoy', 'Fecha', 'Permanente']; track validity) {
+          @for (validity of ['Hoy', 'Fecha']; track validity) {
             <mat-option [value]="validity">
               <span class="order-option-row">
-                <span class="order-option-symbol validity">{{ validity === 'Permanente' ? 'P' : validity === 'Fecha' ? 'F' : 'H' }}</span>
+                <span class="order-option-symbol validity">{{ validity === 'Fecha' ? 'F' : 'H' }}</span>
                 <span class="order-option-copy">
                   <strong>{{ validityLabel(validity) }}</strong>
                   <small>{{ validityDescription(validity) }}</small>
@@ -228,7 +228,7 @@
             [matDatepicker]="picker"
             [(ngModel)]="fechaSeleccionada"
             [min]="minFecha"
-            [disabled]="submitting">
+            [disabled]="submitting || disabled">
           <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
           <mat-datepicker #picker></mat-datepicker>
         </mat-form-field>
@@ -243,7 +243,7 @@
           [value]="monto ?? ''"
           (input)="updateAmount($event)"
           [readonly]="cantidad !== 0"
-          [disabled]="submitting || (esAMercado && cantidad !== 0)"
+          [disabled]="submitting || disabled || (esAMercado && cantidad !== 0)"
           placeholder="0.00">
         <mat-hint>{{ cantidad === 0 ? 'Ingresa el monto de la operación' : 'Calculado automáticamente' }}</mat-hint>
       </mat-form-field>
@@ -270,13 +270,13 @@
   </section>
 
   <footer class="actions-row">
-    <button mat-button class="back-button" type="button" (click)="cancelled.emit()" [disabled]="submitting">
+    <button mat-button class="back-button" type="button" (click)="cancelled.emit()" [disabled]="submitting || disabled">
       @if (showCancelArrow) {
         <span aria-hidden="true">←</span>
       }
       {{ cancelLabel }}
     </button>
-    <button mat-flat-button color="primary" class="submit-button" type="button" (click)="submit()" [disabled]="submitting">
+    <button mat-flat-button color="primary" class="submit-button" type="button" (click)="submit()" [disabled]="submitting || disabled">
       <span>{{ submitting ? 'Enviando…' : 'Enviar orden' }}</span>
       @if (!submitting) { <span aria-hidden="true">→</span> }
     </button>

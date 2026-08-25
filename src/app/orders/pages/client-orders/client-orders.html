@@ -23,69 +23,151 @@
       <div class="panel-heading">
         <div>
           <h2 id="client-data-title">Datos del cliente</h2>
-          <p>La orden se registrará para la siguiente cuenta.</p>
+          <p>Busca y selecciona al cliente para quien se registrará la orden.</p>
         </div>
       </div>
 
-      <div class="identity-grid" [class.loading]="loadingClient" [attr.aria-busy]="loadingClient">
-        <div class="readonly-field">
-          <label>Nombre del cliente</label>
-          <div class="value">{{ loadingClient ? 'Cargando…' : (client.name || 'No disponible') }}</div>
+      <div class="identity-grid" [attr.aria-busy]="searchingClients">
+        <div class="client-search-control">
+          <mat-form-field appearance="outline" class="client-search-field">
+            <mat-label>Nombre del cliente</mat-label>
+            <input
+              matInput
+              [ngModel]="clientSearch"
+              (ngModelChange)="onClientSearchChange($event)"
+              [matAutocomplete]="clientAutocomplete"
+              [disabled]="submitting"
+              autocomplete="off"
+              placeholder="Escribe al menos 3 caracteres">
+            <mat-autocomplete
+              #clientAutocomplete="matAutocomplete"
+              [displayWith]="displayClientName">
+              @for (result of clientResults; track result.cosabcli) {
+                <mat-option [value]="result">
+                  <span class="client-option">
+                    <strong>{{ result.nombreCompleto }}</strong>
+                    <small>Código {{ result.cosabcli }}</small>
+                  </span>
+                </mat-option>
+              }
+            </mat-autocomplete>
+            <mat-hint>
+              @if (searchingClients) {
+                Buscando clientes…
+              } @else {
+                Selecciona una persona de los resultados
+              }
+            </mat-hint>
+          </mat-form-field>
+          @if (clientSearchError) {
+            <small class="search-status error" role="alert">No se pudo realizar la búsqueda.</small>
+          } @else if (hasSearchedClients && clientResults.length === 0 && !client) {
+            <small class="search-status" aria-live="polite">No se encontraron clientes.</small>
+          }
         </div>
 
         <div class="readonly-field">
           <label>Correo electrónico</label>
-          <div class="value">{{ loadingClient ? 'Cargando…' : (client.email || 'No disponible') }}</div>
+          @if (client && client.emails.length > 0) {
+            <button
+              type="button"
+              class="readonly-disclosure"
+              [matMenuTriggerFor]="emailMenu"
+              [disabled]="submitting"
+              aria-label="Ver correos electrónicos registrados">
+              <span>{{ client.emails.length === 1 ? client.emails[0] : client.emails.length + ' correos registrados' }}</span>
+              <span class="disclosure-arrow" aria-hidden="true">⌄</span>
+            </button>
+            <mat-menu #emailMenu="matMenu" panelClass="readonly-contact-menu" xPosition="before">
+              <div class="contact-menu-content" role="list" aria-label="Correos electrónicos registrados">
+                <strong>Correos registrados</strong>
+                @for (email of client.emails; track email) {
+                  <span role="listitem">{{ email }}</span>
+                }
+              </div>
+            </mat-menu>
+          } @else {
+            <div class="value">
+              @if (!client) {
+                Selecciona un cliente
+              } @else {
+                El cliente no cuenta con un correo electrónico
+              }
+            </div>
+          }
         </div>
 
         <div class="readonly-field">
           <label>Número de celular</label>
-          <div class="value">{{ client.phone }}</div>
+          <div class="value">
+            @if (!client) {
+              Selecciona un cliente
+            } @else if (client.phones.length === 0) {
+              El cliente no cuenta con número de celular
+            } @else {
+              <button
+                type="button"
+                class="readonly-disclosure"
+                [matMenuTriggerFor]="phoneMenu"
+                [disabled]="submitting"
+                aria-label="Ver números de celular registrados">
+                <span>{{ client.phones.length === 1 ? client.phones[0] : client.phones.length + ' números registrados' }}</span>
+                <span class="disclosure-arrow" aria-hidden="true">⌄</span>
+              </button>
+              <mat-menu #phoneMenu="matMenu" panelClass="readonly-contact-menu" xPosition="before">
+                <div class="contact-menu-content" role="list" aria-label="Números de celular registrados">
+                  <strong>Números registrados</strong>
+                  @for (phone of client.phones; track phone) {
+                    <span role="listitem">{{ phone }}</span>
+                  }
+                </div>
+              </mat-menu>
+            }
+          </div>
+          @if (client && client.phones.length > 0) {
+            <small class="recipient-help">
+              {{ client.phones.length === 1
+                ? 'La orden se enviará a este número de celular.'
+                : 'La orden se enviará a estos números de celular.' }}
+            </small>
+          }
         </div>
 
         <div class="readonly-field code-field">
           <label>Código de cliente</label>
-          @if (loadingClient) {
-            <div class="value">Cargando…</div>
-          } @else if (client.clientCodes.length <= 1) {
-            <div class="value">{{ selectedClientCode || 'No disponible' }}</div>
-          } @else {
-            <mat-select
-              class="inline-client-select"
-              [(ngModel)]="selectedClientCode"
-              [disabled]="submitting"
-              aria-label="Código de cliente"
-              panelClass="order-select-panel">
-              <mat-select-trigger>
-                <span class="inline-select-value">
-                  <strong>{{ selectedClientCode }}</strong>
-                </span>
-              </mat-select-trigger>
-              @for (code of client.clientCodes; track code) {
-                <mat-option [value]="code">
-                  <span class="order-option-row">
-                    <span class="order-option-symbol">CL</span>
-                    <span class="order-option-copy">
-                      <strong>{{ code }}</strong>
-                      <small>Código de cliente</small>
-                    </span>
-                  </span>
-                </mat-option>
-              }
-            </mat-select>
-          }
+          <div class="value">{{ selectedClientCode || 'Selecciona un cliente' }}</div>
         </div>
       </div>
     </section>
 
-    <app-order-form
-      [markets]="markets"
-      marketControl="select"
-      [initialValue]="initialOrder"
-      [submitting]="submitting"
-      cancelLabel="Limpiar formulario"
-      [showCancelArrow]="false"
-      (orderSubmitted)="submitOrder($event)"
-      (cancelled)="clearOrderForm()" />
+    <div class="order-form-shell" [class.blocked]="orderFormDisabled">
+      <app-order-form
+        [attr.aria-disabled]="orderFormDisabled"
+        [markets]="markets"
+        marketControl="select"
+        [initialValue]="initialOrder"
+        [submitting]="submitting"
+        [disabled]="orderFormDisabled"
+        cancelLabel="Limpiar formulario"
+        [showCancelArrow]="false"
+        (orderSubmitted)="submitOrder($event)"
+        (cancelled)="clearOrderForm()" />
+
+      @if (orderFormDisabled) {
+        <div class="order-blocking-glass" role="alert" aria-live="assertive">
+          <div class="glass-message">
+            <span class="glass-lock" aria-hidden="true">
+              <svg viewBox="0 0 24 24">
+                <rect x="5" y="10" width="14" height="10" rx="2" />
+                <path d="M8 10V7a4 4 0 0 1 8 0v3" />
+              </svg>
+            </span>
+            <strong>No se puede continuar con este cliente</strong>
+            <span>{{ orderBlockMessage }}</span>
+            <small>Selecciona otro cliente válido para habilitar el formulario.</small>
+          </div>
+        </div>
+      }
+    </div>
   </div>
 </div>

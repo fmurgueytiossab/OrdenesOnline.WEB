@@ -40,6 +40,7 @@ export class OrderFormComponent implements OnInit {
   @Input() markets: MarketOption[] = [];
   @Input() marketControl: 'radio' | 'select' = 'radio';
   @Input() submitting = false;
+  @Input() disabled = false;
   @Input() initialValue: Partial<OrderFormValue> | null = null;
   @Input() cancelLabel = 'Volver';
   @Input() showCancelArrow = true;
@@ -104,17 +105,17 @@ export class OrderFormComponent implements OnInit {
 
   validityLabel(value: string): string {
     if (value === 'Fecha') return 'Hasta una fecha';
-    if (value === 'Permanente') return 'Permanente';
     return 'Por hoy';
   }
 
   validityDescription(value: string): string {
     if (value === 'Fecha') return 'Elige el último día de vigencia';
-    if (value === 'Permanente') return 'Activa hasta ejecución o cancelación';
     return 'Válida hasta el cierre de hoy';
   }
 
   submit(): void {
+    if (this.disabled || this.submitting) return;
+
     if (!this.mercado) {
       this.showError('Debe seleccionar un mercado');
       return;
@@ -222,7 +223,6 @@ export class OrderFormComponent implements OnInit {
   }
 
   private buildValidity(): string {
-    if (this.tipoVigencia === 'Permanente') return 'Permanente';
     if (this.tipoVigencia === 'Fecha' && this.fechaSeleccionada) {
       const day = this.fechaSeleccionada.getDate().toString().padStart(2, '0');
       const month = (this.fechaSeleccionada.getMonth() + 1).toString().padStart(2, '0');
@@ -242,7 +242,7 @@ export class OrderFormComponent implements OnInit {
     this.montoManual = value.monto ?? this.montoManual;
     this.moneda = value.moneda === 'Dólares' ? '02' : value.moneda === 'Soles' ? '01' : '';
     this.descripcionMoneda = value.moneda ?? this.descripcionMoneda;
-    this.tipoVigencia = value.vigencia?.toLowerCase().includes('permanente') ? 'Permanente' : 'Hoy';
+    this.tipoVigencia = 'Hoy';
   }
 
   private showError(message: string): void {
