@@ -2,30 +2,50 @@ export type ExecutionChannel = 'BVL' | 'CANACCORD' | 'RENTA4' | 'PERSHING';
 
 export type ClientOrderStatus =
   | 'PENDIENTE'
-  | 'EN_PROCESO'
+  | 'PARCIAL'
   | 'EJECUTADA'
-  | 'RECHAZADA'
   | 'ANULADA';
 
 export interface ClientOrder {
-  id: string;
-  submittedAt: string;
-  updatedAt: string;
-  clientName: string;
+  id: number;
   clientCode: string;
+  proposalDate: string;
+  proposalTime: string | null;
+  bvlProposalNumber: string;
   channel: ExecutionChannel;
   instrument: string;
   side: 'Compra' | 'Venta';
-  quantity: number;
-  orderType: 'Límite' | 'Mercado';
+  proposedQuantity: number;
+  executedQuantity: number;
+  cancelledQuantity: number;
+  pendingQuantity: number;
   price: number | null;
-  currency: 'PEN' | 'USD';
-  validity: string;
   status: ClientOrderStatus;
-  cancellationReason?: string;
-  cancelledAt?: string;
-  cancelledBy?: string;
-  sourceOrderId?: string;
+}
+
+export interface BvlTrackingItemResponse {
+  codigoOrden: number;
+  cosabcli: string;
+  fechaPropuesta: string;
+  horaPropuesta: string | null;
+  numeroPropuestaBvl: string;
+  instrumento: string;
+  tipo: string;
+  cantidadPropuesta: number;
+  cantidadEjecutada: number;
+  cantidadAnulada: number;
+  cantidadPendiente: number;
+  precio: number | null;
+  estado: string;
+  mercado: string;
+}
+
+export interface BvlTrackingPageResponse {
+  items: BvlTrackingItemResponse[];
+  page: number;
+  pageSize: number;
+  totalCount: number;
+  lastUpdatedAt: string;
 }
 
 export const EXECUTION_CHANNELS: ReadonlyArray<{
@@ -40,8 +60,7 @@ export const EXECUTION_CHANNELS: ReadonlyArray<{
 
 export const CLIENT_ORDER_STATUS_LABELS: Record<ClientOrderStatus, string> = {
   PENDIENTE: 'Pendiente',
-  EN_PROCESO: 'En proceso',
+  PARCIAL: 'Parcial',
   EJECUTADA: 'Ejecutada',
-  RECHAZADA: 'Rechazada',
   ANULADA: 'Anulada',
 };

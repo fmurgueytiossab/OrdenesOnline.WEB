@@ -37,6 +37,7 @@ import { MarketOption, OrderFormValue } from '../../models/order-form-value';
   ],
 })
 export class OrderFormComponent implements OnInit {
+  readonly operationTypes = ['Compra', 'Venta'] as const;
   @Input() markets: MarketOption[] = [];
   @Input() marketControl: 'radio' | 'select' = 'radio';
   @Input() submitting = false;
@@ -101,6 +102,10 @@ export class OrderFormComponent implements OnInit {
 
   marketBadge(market: MarketOption): string {
     return market.code.slice(0, 2).toUpperCase();
+  }
+
+  operationDescription(operation: string): string {
+    return operation === 'Venta' ? 'Vender posiciones' : 'Adquirir valores';
   }
 
   validityLabel(value: string): string {

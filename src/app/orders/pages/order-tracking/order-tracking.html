@@ -4,15 +4,20 @@
       <div>
         <span class="eyebrow">Portal de clientes</span>
         <h1 id="tracking-title">Seguimiento de órdenes</h1>
-        <p>Consulta el estado de tus operaciones y gestiona las que aún están activas.</p>
+        <p>Consulta el estado y el detalle actualizado de tus operaciones.</p>
       </div>
-
+      <button class="secondary-button" type="button" [disabled]="loading" (click)="refreshOrders()">
+        {{ loading ? 'Actualizando…' : 'Actualizar' }}
+      </button>
     </header>
 
-    <div class="demo-notice" role="note">
-      <span class="notice-dot" aria-hidden="true"></span>
-      Datos de demostración. La consulta y anulación quedarán listas para conectarse al API.
-    </div>
+    @if (loadError) {
+      <div class="demo-notice error-notice" role="alert">
+        <span class="notice-dot" aria-hidden="true"></span>
+        <span>{{ loadError }}</span>
+        <button type="button" (click)="refreshOrders()">Reintentar</button>
+      </div>
+    }
 
     <div class="channel-tabs" role="tablist" aria-label="Canal de ejecución">
       <button
@@ -60,9 +65,8 @@
               panelClass="tracking-select-panel">
               <mat-option value="ALL">Todos</mat-option>
               <mat-option value="PENDIENTE">Pendiente</mat-option>
-              <mat-option value="EN_PROCESO">En proceso</mat-option>
+              <mat-option value="PARCIAL">Parcial</mat-option>
               <mat-option value="EJECUTADA">Ejecutada</mat-option>
-              <mat-option value="RECHAZADA">Rechazada</mat-option>
               <mat-option value="ANULADA">Anulada</mat-option>
             </mat-select>
           </mat-form-field>
@@ -152,15 +156,27 @@
           <h2 id="results-title">Tus órdenes</h2>
           <p>{{ filteredOrders.length }} {{ filteredOrders.length === 1 ? 'resultado' : 'resultados' }}</p>
         </div>
-        <span class="updated-label"><span aria-hidden="true">●</span> Información actualizada</span>
+        @if (lastUpdatedAt) {
+          <span class="updated-label">
+            <span aria-hidden="true">●</span>
+            Actualizado {{ lastUpdatedAt | date: 'dd/MM/yyyy, HH:mm' }}
+          </span>
+        }
       </div>
 
-      @if (visibleOrders.length > 0) {
+      @if (loading && trackingService.orders().length === 0) {
+        <div class="empty-state" role="status">
+          <div aria-hidden="true">…</div>
+          <h3>Cargando órdenes de BVL</h3>
+          <p>Estamos consultando la información más reciente.</p>
+        </div>
+      } @else if (visibleOrders.length > 0) {
         <div class="table-scroll">
           <table>
             <thead>
               <tr>
                 <th scope="col">Orden / Fecha</th>
+                <th scope="col">Código de cliente</th>
                 <th scope="col">Canal</th>
                 <th scope="col">Instrumento</th>
                 <th scope="col">Operación</th>
@@ -174,17 +190,22 @@
               @for (order of visibleOrders; track order.id) {
                 <tr>
                   <td data-label="Orden / Fecha">
-                    <button class="order-link" type="button" (click)="openDetail(order)">{{ order.id }}</button>
-                    <small>{{ order.submittedAt | date: 'dd/MM/yyyy, HH:mm' }}</small>
+                    <button class="order-link" type="button" (click)="openDetail(order)">
+                      #{{ order.id }}
+                    </button>
+                    <small>
+                      {{ proposalTimestamp(order) | date: 'dd/MM/yyyy, HH:mm' }}
+                    </small>
                   </td>
+                  <td data-label="Código de cliente"><strong>{{ order.clientCode }}</strong></td>
                   <td data-label="Canal"><span class="channel-pill">{{ formatChannel(order.channel) }}</span></td>
                   <td data-label="Instrumento"><strong>{{ order.instrument }}</strong></td>
                   <td data-label="Operación">
                     <span class="side-indicator" [class.sell]="order.side === 'Venta'" aria-hidden="true"></span>
                     {{ order.side }}
                   </td>
-                  <td data-label="Cantidad" class="numeric">{{ order.quantity | number: '1.0-0' }}</td>
-                  <td data-label="Precio" class="numeric">{{ formatMoney(order) }}</td>
+                  <td data-label="Cantidad" class="numeric">{{ order.proposedQuantity | number: '1.0-3' }}</td>
+                  <td data-label="Precio" class="numeric">{{ formatPrice(order.price) }}</td>
                   <td data-label="Estado">
                     <span class="status" [attr.data-status]="order.status">{{ statusLabel(order.status) }}</span>
                   </td>
@@ -194,13 +215,6 @@
                       <div>
                         <button type="button" (click)="openDetail(order)">Ver detalle</button>
                         <button type="button" (click)="generateNewOrder(order)">Generar nueva orden</button>
-                        <button
-                          type="button"
-                          class="danger-action"
-                          [disabled]="!trackingService.canAnnul(order)"
-                          (click)="openAnnul(order)">
-                          Anular orden
-                        </button>
                       </div>
                     </details>
                   </td>
@@ -230,73 +244,37 @@
   </section>
 </main>
 
-@if (dialogMode && selectedOrder) {
+@if (selectedOrder) {
   <div class="dialog-backdrop" (click)="closeDialog()">
     <section
       class="dialog"
       role="dialog"
       aria-modal="true"
-      [attr.aria-labelledby]="dialogMode === 'detail' ? 'detail-title' : 'annul-title'"
+      aria-labelledby="detail-title"
       (click)="$event.stopPropagation()">
       <button class="dialog-close" type="button" aria-label="Cerrar" (click)="closeDialog()">×</button>
 
-      @if (dialogMode === 'detail') {
-        <span class="dialog-icon detail-icon" aria-hidden="true">↗</span>
-        <span class="eyebrow">Detalle de la orden</span>
-        <h2 id="detail-title">{{ selectedOrder.id }}</h2>
-        <div class="detail-grid">
-          <div><span>Estado</span><strong class="status" [attr.data-status]="selectedOrder.status">{{ statusLabel(selectedOrder.status) }}</strong></div>
-          <div><span>Canal de ejecución</span><strong>{{ formatChannel(selectedOrder.channel) }}</strong></div>
-          <div><span>Instrumento</span><strong>{{ selectedOrder.instrument }}</strong></div>
-          <div><span>Operación</span><strong>{{ selectedOrder.side }}</strong></div>
-          <div><span>Cantidad</span><strong>{{ selectedOrder.quantity | number: '1.0-0' }}</strong></div>
-          <div><span>Precio</span><strong>{{ formatMoney(selectedOrder) }}</strong></div>
-          <div><span>Tipo de orden</span><strong>{{ selectedOrder.orderType }}</strong></div>
-          <div><span>Vigencia</span><strong>{{ selectedOrder.validity }}</strong></div>
-          @if (selectedOrder.sourceOrderId) {
-            <div><span>Orden de origen</span><strong>{{ selectedOrder.sourceOrderId }}</strong></div>
-          }
-          @if (selectedOrder.cancellationReason) {
-            <div class="full-row"><span>Motivo de anulación</span><strong>{{ selectedOrder.cancellationReason }}</strong></div>
-          }
-          @if (selectedOrder.cancelledAt) {
-            <div><span>Anulada por</span><strong>{{ selectedOrder.cancelledBy }}</strong></div>
-            <div><span>Fecha de anulación</span><strong>{{ selectedOrder.cancelledAt | date: 'dd/MM/yyyy, HH:mm' }}</strong></div>
-          }
-        </div>
-        <div class="dialog-actions">
-          <button type="button" class="secondary-button" (click)="closeDialog()">Cerrar</button>
-          <button type="button" class="primary-button" (click)="generateNewOrder(selectedOrder)">Generar nueva orden</button>
-        </div>
-      } @else {
-        <span class="dialog-icon warning-icon" aria-hidden="true">!</span>
-        <span class="eyebrow danger-text">Confirmar anulación</span>
-        <h2 id="annul-title">¿Deseas anular {{ selectedOrder.id }}?</h2>
-        <p class="dialog-copy">La información original se conservará y el estado cambiará a “Anulada”. Esta acción no elimina la orden.</p>
-        <label class="reason-field">
-          <span>Motivo de anulación <strong>*</strong></span>
-          <textarea
-            rows="4"
-            maxlength="300"
-            [(ngModel)]="cancellationReason"
-            placeholder="Describe brevemente el motivo"></textarea>
-          <small>{{ cancellationReason.length }}/300 · mínimo 5 caracteres</small>
-        </label>
-        <div class="dialog-actions">
-          <button type="button" class="secondary-button" (click)="closeDialog()">Cancelar</button>
-          <button
-            type="button"
-            class="danger-button"
-            [disabled]="cancellationReason.trim().length < 5"
-            (click)="confirmAnnul()">
-            Confirmar anulación
-          </button>
-        </div>
-      }
+      <span class="dialog-icon detail-icon" aria-hidden="true">↗</span>
+      <span class="eyebrow">Detalle de la orden BVL</span>
+      <h2 id="detail-title">#{{ selectedOrder.id }}</h2>
+      <div class="detail-grid">
+        <div><span>Código de orden</span><strong>#{{ selectedOrder.id }}</strong></div>
+        <div><span>Código de cliente</span><strong>{{ selectedOrder.clientCode }}</strong></div>
+        <div><span>Estado</span><strong class="status" [attr.data-status]="selectedOrder.status">{{ statusLabel(selectedOrder.status) }}</strong></div>
+        <div><span>Canal de ejecución</span><strong>{{ formatChannel(selectedOrder.channel) }}</strong></div>
+        <div><span>Fecha</span><strong>{{ proposalTimestamp(selectedOrder) | date: 'dd/MM/yyyy, HH:mm' }}</strong></div>
+        <div><span>Instrumento</span><strong>{{ selectedOrder.instrument }}</strong></div>
+        <div><span>Operación</span><strong>{{ selectedOrder.side }}</strong></div>
+        <div><span>Precio</span><strong>{{ formatPrice(selectedOrder.price) }}</strong></div>
+        <div><span>Cantidad propuesta</span><strong>{{ selectedOrder.proposedQuantity | number: '1.0-3' }}</strong></div>
+        <div><span>Cantidad ejecutada</span><strong>{{ selectedOrder.executedQuantity | number: '1.0-3' }}</strong></div>
+        <div><span>Cantidad anulada</span><strong>{{ selectedOrder.cancelledQuantity | number: '1.0-3' }}</strong></div>
+        <div><span>Cantidad pendiente</span><strong>{{ selectedOrder.pendingQuantity | number: '1.0-3' }}</strong></div>
+      </div>
+      <div class="dialog-actions">
+        <button type="button" class="secondary-button" (click)="closeDialog()">Cerrar</button>
+        <button type="button" class="primary-button" (click)="generateNewOrder(selectedOrder)">Generar nueva orden</button>
+      </div>
     </section>
   </div>
-}
-
-@if (toastMessage) {
-  <div class="toast" [class.error]="toastIsError" role="status">{{ toastMessage }}</div>
 }

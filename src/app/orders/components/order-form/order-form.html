@@ -11,28 +11,39 @@
     <div class="operation-grid">
       <div class="control-group">
         <span class="control-label">Operación</span>
-        <div class="segmented-control" role="radiogroup" aria-label="Tipo de operación">
-          <button
-            type="button"
-            role="radio"
-            [attr.aria-checked]="tipo === 'Compra'"
-            [class.active]="tipo === 'Compra'"
+        <mat-form-field appearance="outline" class="form-field enhanced-select-field operation-select-field">
+          <mat-label>Selecciona una operación</mat-label>
+          <mat-select
+            [(ngModel)]="tipo"
             [disabled]="submitting || disabled"
-            (click)="tipo = 'Compra'">
-            <span class="operation-dot buy" aria-hidden="true">↗</span>
-            <span><strong>Compra</strong><small>Adquirir valores</small></span>
-          </button>
-          <button
-            type="button"
-            role="radio"
-            [attr.aria-checked]="tipo === 'Venta'"
-            [class.active]="tipo === 'Venta'"
-            [disabled]="submitting || disabled"
-            (click)="tipo = 'Venta'">
-            <span class="operation-dot sell" aria-hidden="true">↘</span>
-            <span><strong>Venta</strong><small>Vender posiciones</small></span>
-          </button>
-        </div>
+            panelClass="order-select-panel">
+            <mat-select-trigger>
+              <span class="order-select-trigger">
+                <span class="order-select-symbol" [class.sell]="tipo === 'Venta'">
+                  {{ tipo === 'Venta' ? '↘' : '↗' }}
+                </span>
+                <span class="order-select-copy">
+                  <strong>{{ tipo }}</strong>
+                  <small>{{ operationDescription(tipo) }}</small>
+                </span>
+              </span>
+            </mat-select-trigger>
+            @for (operation of operationTypes; track operation) {
+              <mat-option [value]="operation">
+                <span class="order-option-row">
+                  <span class="order-option-symbol" [class.sell]="operation === 'Venta'">
+                    {{ operation === 'Venta' ? '↘' : '↗' }}
+                  </span>
+                  <span class="order-option-copy">
+                    <strong>{{ operation }}</strong>
+                    <small>{{ operationDescription(operation) }}</small>
+                  </span>
+                </span>
+              </mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+        <small class="field-help">Selecciona si deseas comprar o vender valores.</small>
       </div>
 
       @if (marketControl === 'radio') {

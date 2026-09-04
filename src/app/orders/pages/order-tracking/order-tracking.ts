@@ -1,14 +1,16 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnDestroy } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { MAT_DATE_LOCALE, MatNativeDateModule } from '@angular/material/core';
 import { MatButtonModule } from '@angular/material/button';
+import { MAT_DATE_LOCALE, MatNativeDateModule } from '@angular/material/core';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { ActivatedRoute, Router } from '@angular/router';
+import { finalize } from 'rxjs';
 
+import { PORTAL_ROUTES } from '../../../shared/portal-routes';
 import {
   CLIENT_ORDER_STATUS_LABELS,
   ClientOrder,
@@ -17,12 +19,10 @@ import {
   ExecutionChannel,
 } from '../../models/client-order';
 import { ClientOrderTrackingService } from '../../services/client-order-tracking.service';
-import { PORTAL_ROUTES } from '../../../shared/portal-routes';
 
 type ChannelFilter = ExecutionChannel | 'ALL';
 type StatusFilter = ClientOrderStatus | 'ALL';
 type SideFilter = ClientOrder['side'] | 'ALL';
-type DialogMode = 'detail' | 'annul' | null;
 
 @Component({
   selector: 'app-order-tracking',
@@ -41,7 +41,7 @@ type DialogMode = 'detail' | 'annul' | null;
   templateUrl: './order-tracking.html',
   styleUrl: './order-tracking.css',
 })
-export class OrderTrackingComponent implements OnDestroy {
+export class OrderTrackingComponent implements OnInit {
   readonly channels = EXECUTION_CHANNELS;
   readonly statusLabels = CLIENT_ORDER_STATUS_LABELS;
   readonly pageSize = 5;
@@ -55,12 +55,10 @@ export class OrderTrackingComponent implements OnDestroy {
   endDate: Date | null = null;
   currentPage = 1;
 
-  dialogMode: DialogMode = null;
+  loading = false;
+  loadError = '';
+  lastUpdatedAt: Date | null = null;
   selectedOrder: ClientOrder | null = null;
-  cancellationReason = '';
-  toastMessage = '';
-  toastIsError = false;
-  private toastTimer?: ReturnType<typeof setTimeout>;
 
   constructor(
     readonly trackingService: ClientOrderTrackingService,
@@ -68,6 +66,10 @@ export class OrderTrackingComponent implements OnDestroy {
     private readonly router: Router,
   ) {
     this.restoreFiltersFromUrl();
+  }
+
+  ngOnInit(): void {
+    this.refreshOrders();
   }
 
   get filteredOrders(): ClientOrder[] {
@@ -80,12 +82,14 @@ export class OrderTrackingComponent implements OnDestroy {
       if (this.selectedChannel !== 'ALL' && order.channel !== this.selectedChannel) return false;
       if (this.selectedStatus !== 'ALL' && order.status !== this.selectedStatus) return false;
       if (this.selectedSide !== 'ALL' && order.side !== this.selectedSide) return false;
-      if (orderNumber && !order.id.toLowerCase().includes(orderNumber)) return false;
+      if (
+        orderNumber
+        && !order.id.toString().includes(orderNumber)
+        && !order.bvlProposalNumber.toLowerCase().includes(orderNumber)
+      ) return false;
       if (instrument && !order.instrument.toLowerCase().includes(instrument)) return false;
-
-      const submittedDate = order.submittedAt.slice(0, 10);
-      if (startDate && submittedDate < startDate) return false;
-      if (endDate && submittedDate > endDate) return false;
+      if (startDate && order.proposalDate < startDate) return false;
+      if (endDate && order.proposalDate > endDate) return false;
       return true;
     });
   }
@@ -110,6 +114,25 @@ export class OrderTrackingComponent implements OnDestroy {
   channelCount(channel: ChannelFilter): number {
     if (channel === 'ALL') return this.trackingService.orders().length;
     return this.trackingService.orders().filter((order) => order.channel === channel).length;
+  }
+
+  refreshOrders(): void {
+    if (this.loading) return;
+
+    this.loading = true;
+    this.loadError = '';
+    this.trackingService.loadBvlOrders()
+      .pipe(finalize(() => (this.loading = false)))
+      .subscribe({
+        next: () => {
+          const updatedAt = this.trackingService.lastUpdatedAt();
+          this.lastUpdatedAt = updatedAt ? new Date(updatedAt) : new Date();
+          if (this.currentPage > this.totalPages) this.currentPage = this.totalPages;
+        },
+        error: () => {
+          this.loadError = 'No se pudieron cargar las órdenes de BVL.';
+        },
+      });
   }
 
   selectChannel(channel: ChannelFilter): void {
@@ -149,38 +172,10 @@ export class OrderTrackingComponent implements OnDestroy {
 
   openDetail(order: ClientOrder): void {
     this.selectedOrder = order;
-    this.dialogMode = 'detail';
-  }
-
-  openAnnul(order: ClientOrder): void {
-    if (!this.trackingService.canAnnul(order)) {
-      this.showToast('Esta orden ya no puede anularse.', true);
-      return;
-    }
-    this.selectedOrder = order;
-    this.cancellationReason = '';
-    this.dialogMode = 'annul';
   }
 
   closeDialog(): void {
-    this.dialogMode = null;
     this.selectedOrder = null;
-    this.cancellationReason = '';
-  }
-
-  confirmAnnul(): void {
-    if (!this.selectedOrder || this.cancellationReason.trim().length < 5) return;
-
-    const wasAnnulled = this.trackingService.annul(
-      this.selectedOrder.id,
-      this.cancellationReason,
-    );
-    this.closeDialog();
-    if (this.currentPage > this.totalPages) this.currentPage = this.totalPages;
-    this.showToast(
-      wasAnnulled ? 'La orden fue anulada correctamente.' : 'La orden ya no puede anularse.',
-      !wasAnnulled,
-    );
   }
 
   generateNewOrder(order: ClientOrder): void {
@@ -197,17 +192,16 @@ export class OrderTrackingComponent implements OnDestroy {
     return this.channels.find((item) => item.code === channel)?.name ?? channel;
   }
 
-  formatMoney(order: ClientOrder): string {
-    if (order.price === null) return 'A mercado';
+  formatPrice(price: number | null): string {
+    if (price === null) return '—';
     return new Intl.NumberFormat('es-PE', {
-      style: 'currency',
-      currency: order.currency,
       minimumFractionDigits: 2,
-    }).format(order.price);
+      maximumFractionDigits: 3,
+    }).format(price);
   }
 
-  ngOnDestroy(): void {
-    if (this.toastTimer) clearTimeout(this.toastTimer);
+  proposalTimestamp(order: ClientOrder): string {
+    return `${order.proposalDate}T${order.proposalTime ?? '00:00:00'}`;
   }
 
   private restoreFiltersFromUrl(): void {
@@ -232,7 +226,6 @@ export class OrderTrackingComponent implements OnDestroy {
     this.startDate = this.parseDateQuery(query.get('from'));
     this.endDate = this.parseDateQuery(query.get('to'));
     this.currentPage = Number.isInteger(page) && page > 0 ? page : 1;
-    if (this.currentPage > this.totalPages) this.currentPage = this.totalPages;
   }
 
   private updateUrl(): void {
@@ -250,13 +243,6 @@ export class OrderTrackingComponent implements OnDestroy {
       },
       replaceUrl: true,
     });
-  }
-
-  private showToast(message: string, isError = false): void {
-    this.toastMessage = message;
-    this.toastIsError = isError;
-    if (this.toastTimer) clearTimeout(this.toastTimer);
-    this.toastTimer = setTimeout(() => (this.toastMessage = ''), 3500);
   }
 
   private formatDateQuery(date: Date | null): string | null {

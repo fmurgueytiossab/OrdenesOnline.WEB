@@ -91,14 +91,13 @@ export class ClientOrdersComponent {
     this.initialOrder = sourceOrder
       ? {
           tipo: sourceOrder.side,
-          cantidad: sourceOrder.quantity,
+          cantidad: sourceOrder.proposedQuantity,
           instrumento: sourceOrder.instrument,
-          tipoOrden: sourceOrder.orderType,
           precio: sourceOrder.price,
-          monto: sourceOrder.price === null ? null : sourceOrder.quantity * sourceOrder.price,
-          mercado: sourceOrder.channel,
-          moneda: sourceOrder.currency === 'USD' ? 'Dólares' : 'Soles',
-          vigencia: sourceOrder.validity,
+          monto: sourceOrder.price === null
+            ? null
+            : sourceOrder.proposedQuantity * sourceOrder.price,
+          mercado: '01',
         }
       : null;
 

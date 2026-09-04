@@ -135,6 +135,25 @@ h1 {
   border-radius: 50%;
 }
 
+.error-notice {
+  color: #b42318;
+  background: #fef3f2;
+  border-color: #fecdca;
+}
+
+.error-notice .notice-dot { background: #d92d20; }
+
+.error-notice button {
+  margin-left: auto;
+  padding: 0.3rem 0.55rem;
+  color: #b42318;
+  background: #fff;
+  border: 1px solid #fda29b;
+  border-radius: 0.45rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
 .channel-tabs {
   display: flex;
   gap: 0.45rem;
@@ -397,9 +416,8 @@ td small {
 .channel-pill { color: #344054; background: #f2f4f7; }
 
 .status[data-status="PENDIENTE"] { color: #b54708; background: #fffaeb; }
-.status[data-status="EN_PROCESO"] { color: #175cd3; background: #eff8ff; }
+.status[data-status="PARCIAL"] { color: #175cd3; background: #eff8ff; }
 .status[data-status="EJECUTADA"] { color: #027a48; background: #ecfdf3; }
-.status[data-status="RECHAZADA"] { color: #b42318; background: #fef3f2; }
 .status[data-status="ANULADA"] { color: #475467; background: #f2f4f7; }
 
 .side-indicator {
