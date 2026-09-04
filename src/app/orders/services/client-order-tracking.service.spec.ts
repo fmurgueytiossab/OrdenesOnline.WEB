@@ -3,7 +3,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { TestBed } from '@angular/core/testing';
 
 import { environment } from '../../../environments/environment';
-import { BvlTrackingItemResponse } from '../models/client-order';
+import { TrackingItemResponse } from '../models/client-order';
 import { ClientOrderTrackingService } from './client-order-tracking.service';
 
 describe('ClientOrderTrackingService', () => {
@@ -20,17 +20,17 @@ describe('ClientOrderTrackingService', () => {
 
   afterEach(() => httpTesting.verify());
 
-  it('loads BVL tracking and maps the API contract to the table model', () => {
+  it('loads tracking and maps the API contract to the table model', () => {
     let result = service.orders();
 
-    service.loadBvlOrders().subscribe((orders) => (result = orders));
+    service.loadOrders().subscribe((orders) => (result = orders));
 
     const request = httpTesting.expectOne(
-      `${environment.apiUrl}/PropuestaCliente/seguimiento/bvl?page=1&pageSize=100`,
+      `${environment.apiUrl}/PropuestaCliente/seguimiento?page=1&pageSize=100`,
     );
     expect(request.request.method).toBe('GET');
     request.flush({
-      items: [bvlItem()],
+      items: [trackingItem()],
       page: 1,
       pageSize: 100,
       totalCount: 1,
@@ -41,7 +41,8 @@ describe('ClientOrderTrackingService', () => {
       expect.objectContaining({
         id: 41,
         clientCode: 'C001',
-        bvlProposalNumber: '9001',
+        operationNumber: '9001',
+        channel: 'BVL',
         side: 'Compra',
         proposedQuantity: 100,
         executedQuantity: 20,
@@ -54,13 +55,36 @@ describe('ClientOrderTrackingService', () => {
     expect(service.getById('9001')?.id).toBe(41);
   });
 
-  it('requests every API page when there are more than 100 BVL orders', () => {
-    service.loadBvlOrders().subscribe();
+  it('maps Canaccord and Viewtrade into their tracking tabs', () => {
+    service.loadOrders().subscribe();
+
+    const request = httpTesting.expectOne(
+      `${environment.apiUrl}/PropuestaCliente/seguimiento?page=1&pageSize=100`,
+    );
+    request.flush({
+      items: [
+        { ...trackingItem(), codigoOrden: 42, numeroOperacion: 'CAN-1', mercado: 'CANACCORD' },
+        { ...trackingItem(), codigoOrden: 43, numeroOperacion: 'VIE-1', mercado: 'VIEWTRADE' },
+      ],
+      page: 1,
+      pageSize: 100,
+      totalCount: 2,
+      lastUpdatedAt: '2026-09-04T15:30:00Z',
+    });
+
+    expect(service.orders().map((order) => order.channel)).toEqual([
+      'CANACCORD',
+      'VIEWTRADE',
+    ]);
+  });
+
+  it('requests every API page when there are more than 100 tracked orders', () => {
+    service.loadOrders().subscribe();
 
     httpTesting.expectOne(
-      `${environment.apiUrl}/PropuestaCliente/seguimiento/bvl?page=1&pageSize=100`,
+      `${environment.apiUrl}/PropuestaCliente/seguimiento?page=1&pageSize=100`,
     ).flush({
-      items: [bvlItem()],
+      items: [trackingItem()],
       page: 1,
       pageSize: 100,
       totalCount: 101,
@@ -68,9 +92,9 @@ describe('ClientOrderTrackingService', () => {
     });
 
     httpTesting.expectOne(
-      `${environment.apiUrl}/PropuestaCliente/seguimiento/bvl?page=2&pageSize=100`,
+      `${environment.apiUrl}/PropuestaCliente/seguimiento?page=2&pageSize=100`,
     ).flush({
-      items: [{ ...bvlItem(), codigoOrden: 42, numeroPropuestaBvl: '9002' }],
+      items: [{ ...trackingItem(), codigoOrden: 42, numeroOperacion: '9002' }],
       page: 2,
       pageSize: 100,
       totalCount: 101,
@@ -80,13 +104,13 @@ describe('ClientOrderTrackingService', () => {
     expect(service.orders().map((order) => order.id)).toEqual([41, 42]);
   });
 
-  function bvlItem(): BvlTrackingItemResponse {
+  function trackingItem(): TrackingItemResponse {
     return {
       codigoOrden: 41,
       cosabcli: ' C001 ',
       fechaPropuesta: '2026-09-04',
       horaPropuesta: '10:30:00',
-      numeroPropuestaBvl: ' 9001 ',
+      numeroOperacion: ' 9001 ',
       instrumento: ' ABC ',
       tipo: 'C',
       cantidadPropuesta: 100,

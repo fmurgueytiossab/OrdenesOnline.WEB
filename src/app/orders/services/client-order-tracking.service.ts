@@ -4,14 +4,15 @@ import { EMPTY, Observable, expand, map, reduce, tap } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
 import {
-  BvlTrackingItemResponse,
-  BvlTrackingPageResponse,
   ClientOrder,
   ClientOrderStatus,
+  ExecutionChannel,
+  TrackingItemResponse,
+  TrackingPageResponse,
 } from '../models/client-order';
 
-const BVL_PAGE_SIZE = 100;
-const BVL_STATUSES: ReadonlySet<string> = new Set([
+const TRACKING_PAGE_SIZE = 100;
+const TRACKING_STATUSES: ReadonlySet<string> = new Set([
   'PENDIENTE',
   'PARCIAL',
   'EJECUTADA',
@@ -29,16 +30,16 @@ export class ClientOrderTrackingService {
 
   constructor(private readonly http: HttpClient) {}
 
-  loadBvlOrders(): Observable<ClientOrder[]> {
-    return this.getBvlPage(1).pipe(
+  loadOrders(): Observable<ClientOrder[]> {
+    return this.getTrackingPage(1).pipe(
       expand((response) => {
         const loadedCount = response.page * response.pageSize;
         return loadedCount < response.totalCount
-          ? this.getBvlPage(response.page + 1)
+          ? this.getTrackingPage(response.page + 1)
           : EMPTY;
       }),
       map((response) => ({
-        orders: response.items.map((item) => this.mapBvlOrder(item)),
+        orders: response.items.map((item) => this.mapOrder(item)),
         lastUpdatedAt: response.lastUpdatedAt,
       })),
       reduce(
@@ -58,32 +59,33 @@ export class ClientOrderTrackingService {
 
   getById(id: string): ClientOrder | undefined {
     return this.orderState().find(
-      (order) => order.id.toString() === id || order.bvlProposalNumber === id,
+      (order) => order.id.toString() === id || order.operationNumber === id,
     );
   }
 
-  private getBvlPage(page: number): Observable<BvlTrackingPageResponse> {
+  private getTrackingPage(page: number): Observable<TrackingPageResponse> {
     const params = new HttpParams()
       .set('page', page.toString())
-      .set('pageSize', BVL_PAGE_SIZE.toString());
+      .set('pageSize', TRACKING_PAGE_SIZE.toString());
 
-    return this.http.get<BvlTrackingPageResponse>(
-      `${this.apiUrl}/PropuestaCliente/seguimiento/bvl`,
+    return this.http.get<TrackingPageResponse>(
+      `${this.apiUrl}/PropuestaCliente/seguimiento`,
       { params },
     );
   }
 
-  private mapBvlOrder(item: BvlTrackingItemResponse): ClientOrder {
+  private mapOrder(item: TrackingItemResponse): ClientOrder {
     const normalizedSide = item.tipo.trim().toUpperCase();
     const normalizedStatus = item.estado.trim().toUpperCase();
+    const normalizedChannel = item.mercado.trim().toUpperCase() as ExecutionChannel;
 
     return {
       id: item.codigoOrden,
       clientCode: item.cosabcli.trim(),
       proposalDate: item.fechaPropuesta,
       proposalTime: item.horaPropuesta,
-      bvlProposalNumber: item.numeroPropuestaBvl.trim(),
-      channel: 'BVL',
+      operationNumber: item.numeroOperacion.trim(),
+      channel: normalizedChannel,
       instrument: item.instrumento.trim(),
       side: normalizedSide === 'V' || normalizedSide === 'VENTA' ? 'Venta' : 'Compra',
       proposedQuantity: item.cantidadPropuesta,
@@ -91,7 +93,7 @@ export class ClientOrderTrackingService {
       cancelledQuantity: item.cantidadAnulada,
       pendingQuantity: item.cantidadPendiente,
       price: item.precio,
-      status: BVL_STATUSES.has(normalizedStatus)
+      status: TRACKING_STATUSES.has(normalizedStatus)
         ? normalizedStatus as ClientOrderStatus
         : 'PENDIENTE',
     };

@@ -167,7 +167,7 @@
       @if (loading && trackingService.orders().length === 0) {
         <div class="empty-state" role="status">
           <div aria-hidden="true">…</div>
-          <h3>Cargando órdenes de BVL</h3>
+          <h3>Cargando órdenes</h3>
           <p>Estamos consultando la información más reciente.</p>
         </div>
       } @else if (visibleOrders.length > 0) {
@@ -183,7 +183,6 @@
                 <th scope="col" class="numeric">Cantidad</th>
                 <th scope="col" class="numeric">Precio</th>
                 <th scope="col">Estado</th>
-                <th scope="col"><span class="visually-hidden">Acciones</span></th>
               </tr>
             </thead>
             <tbody>
@@ -194,7 +193,7 @@
                       #{{ order.id }}
                     </button>
                     <small>
-                      {{ proposalTimestamp(order) | date: 'dd/MM/yyyy, HH:mm' }}
+                      {{ proposalTimestamp(order) | date: (order.proposalTime ? 'dd/MM/yyyy, HH:mm' : 'dd/MM/yyyy') }}
                     </small>
                   </td>
                   <td data-label="Código de cliente"><strong>{{ order.clientCode }}</strong></td>
@@ -208,15 +207,6 @@
                   <td data-label="Precio" class="numeric">{{ formatPrice(order.price) }}</td>
                   <td data-label="Estado">
                     <span class="status" [attr.data-status]="order.status">{{ statusLabel(order.status) }}</span>
-                  </td>
-                  <td class="actions-cell">
-                    <details class="action-menu">
-                      <summary aria-label="Abrir acciones para {{ order.id }}">•••</summary>
-                      <div>
-                        <button type="button" (click)="openDetail(order)">Ver detalle</button>
-                        <button type="button" (click)="generateNewOrder(order)">Generar nueva orden</button>
-                      </div>
-                    </details>
                   </td>
                 </tr>
               }
@@ -255,14 +245,19 @@
       <button class="dialog-close" type="button" aria-label="Cerrar" (click)="closeDialog()">×</button>
 
       <span class="dialog-icon detail-icon" aria-hidden="true">↗</span>
-      <span class="eyebrow">Detalle de la orden BVL</span>
+      <span class="eyebrow">Detalle de la orden {{ formatChannel(selectedOrder.channel) }}</span>
       <h2 id="detail-title">#{{ selectedOrder.id }}</h2>
       <div class="detail-grid">
         <div><span>Código de orden</span><strong>#{{ selectedOrder.id }}</strong></div>
         <div><span>Código de cliente</span><strong>{{ selectedOrder.clientCode }}</strong></div>
         <div><span>Estado</span><strong class="status" [attr.data-status]="selectedOrder.status">{{ statusLabel(selectedOrder.status) }}</strong></div>
         <div><span>Canal de ejecución</span><strong>{{ formatChannel(selectedOrder.channel) }}</strong></div>
-        <div><span>Fecha</span><strong>{{ proposalTimestamp(selectedOrder) | date: 'dd/MM/yyyy, HH:mm' }}</strong></div>
+        <div>
+          <span>Fecha</span>
+          <strong>
+            {{ proposalTimestamp(selectedOrder) | date: (selectedOrder.proposalTime ? 'dd/MM/yyyy, HH:mm' : 'dd/MM/yyyy') }}
+          </strong>
+        </div>
         <div><span>Instrumento</span><strong>{{ selectedOrder.instrument }}</strong></div>
         <div><span>Operación</span><strong>{{ selectedOrder.side }}</strong></div>
         <div><span>Precio</span><strong>{{ formatPrice(selectedOrder.price) }}</strong></div>
@@ -273,7 +268,6 @@
       </div>
       <div class="dialog-actions">
         <button type="button" class="secondary-button" (click)="closeDialog()">Cerrar</button>
-        <button type="button" class="primary-button" (click)="generateNewOrder(selectedOrder)">Generar nueva orden</button>
       </div>
     </section>
   </div>

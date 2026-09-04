@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { Component, DestroyRef, OnInit, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MAT_DATE_LOCALE, MatNativeDateModule } from '@angular/material/core';
@@ -8,9 +9,8 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { ActivatedRoute, Router } from '@angular/router';
-import { finalize } from 'rxjs';
+import { finalize, timer } from 'rxjs';
 
-import { PORTAL_ROUTES } from '../../../shared/portal-routes';
 import {
   CLIENT_ORDER_STATUS_LABELS,
   ClientOrder,
@@ -42,6 +42,9 @@ type SideFilter = ClientOrder['side'] | 'ALL';
   styleUrl: './order-tracking.css',
 })
 export class OrderTrackingComponent implements OnInit {
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly refreshIntervalMs = 30_000;
+
   readonly channels = EXECUTION_CHANNELS;
   readonly statusLabels = CLIENT_ORDER_STATUS_LABELS;
   readonly pageSize = 5;
@@ -69,7 +72,9 @@ export class OrderTrackingComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.refreshOrders();
+    timer(0, this.refreshIntervalMs)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this.refreshOrders());
   }
 
   get filteredOrders(): ClientOrder[] {
@@ -85,7 +90,7 @@ export class OrderTrackingComponent implements OnInit {
       if (
         orderNumber
         && !order.id.toString().includes(orderNumber)
-        && !order.bvlProposalNumber.toLowerCase().includes(orderNumber)
+        && !order.operationNumber.toLowerCase().includes(orderNumber)
       ) return false;
       if (instrument && !order.instrument.toLowerCase().includes(instrument)) return false;
       if (startDate && order.proposalDate < startDate) return false;
@@ -121,7 +126,7 @@ export class OrderTrackingComponent implements OnInit {
 
     this.loading = true;
     this.loadError = '';
-    this.trackingService.loadBvlOrders()
+    this.trackingService.loadOrders()
       .pipe(finalize(() => (this.loading = false)))
       .subscribe({
         next: () => {
@@ -130,7 +135,7 @@ export class OrderTrackingComponent implements OnInit {
           if (this.currentPage > this.totalPages) this.currentPage = this.totalPages;
         },
         error: () => {
-          this.loadError = 'No se pudieron cargar las órdenes de BVL.';
+          this.loadError = 'No se pudieron cargar las órdenes.';
         },
       });
   }
@@ -176,12 +181,6 @@ export class OrderTrackingComponent implements OnInit {
 
   closeDialog(): void {
     this.selectedOrder = null;
-  }
-
-  generateNewOrder(order: ClientOrder): void {
-    this.router.navigate([PORTAL_ROUTES.clientes.orders], {
-      queryParams: { sourceOrderId: order.id },
-    });
   }
 
   statusLabel(status: ClientOrderStatus): string {

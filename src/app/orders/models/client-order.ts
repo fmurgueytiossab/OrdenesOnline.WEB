@@ -1,4 +1,4 @@
-export type ExecutionChannel = 'BVL' | 'CANACCORD' | 'RENTA4' | 'PERSHING';
+export type ExecutionChannel = 'BVL' | 'CANACCORD' | 'VIEWTRADE';
 
 export type ClientOrderStatus =
   | 'PENDIENTE'
@@ -11,7 +11,7 @@ export interface ClientOrder {
   clientCode: string;
   proposalDate: string;
   proposalTime: string | null;
-  bvlProposalNumber: string;
+  operationNumber: string;
   channel: ExecutionChannel;
   instrument: string;
   side: 'Compra' | 'Venta';
@@ -23,12 +23,12 @@ export interface ClientOrder {
   status: ClientOrderStatus;
 }
 
-export interface BvlTrackingItemResponse {
+export interface TrackingItemResponse {
   codigoOrden: number;
   cosabcli: string;
   fechaPropuesta: string;
   horaPropuesta: string | null;
-  numeroPropuestaBvl: string;
+  numeroOperacion: string;
   instrumento: string;
   tipo: string;
   cantidadPropuesta: number;
@@ -40,8 +40,8 @@ export interface BvlTrackingItemResponse {
   mercado: string;
 }
 
-export interface BvlTrackingPageResponse {
-  items: BvlTrackingItemResponse[];
+export interface TrackingPageResponse {
+  items: TrackingItemResponse[];
   page: number;
   pageSize: number;
   totalCount: number;
@@ -54,8 +54,7 @@ export const EXECUTION_CHANNELS: ReadonlyArray<{
 }> = [
   { code: 'BVL', name: 'BVL' },
   { code: 'CANACCORD', name: 'Canaccord' },
-  { code: 'RENTA4', name: 'Renta 4' },
-  { code: 'PERSHING', name: 'Pershing' },
+  { code: 'VIEWTRADE', name: 'Viewtrade' },
 ];
 
 export const CLIENT_ORDER_STATUS_LABELS: Record<ClientOrderStatus, string> = {
