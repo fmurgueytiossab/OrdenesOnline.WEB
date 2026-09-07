@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectorRef, Component, DestroyRef, ViewChild } from '@angular/core';
+import { ChangeDetectorRef, Component, DestroyRef, ViewChild, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
@@ -25,6 +25,7 @@ import { PropuestaClienteService } from '../../../services/PropuestaClienteServi
 import { OrderFormComponent } from '../../components/order-form/order-form';
 import { MarketOption, OrderFormValue } from '../../models/order-form-value';
 import { ClientOrderTrackingService } from '../../services/client-order-tracking.service';
+import { MarketHoursService } from '../../services/market-hours.service';
 
 interface ClientIdentity {
   name: string;
@@ -38,6 +39,7 @@ interface ClientIdentity {
   standalone: true,
   templateUrl: './client-orders.html',
   styleUrls: ['./client-orders.css'],
+  providers: [MarketHoursService],
   imports: [
     CommonModule,
     FormsModule,
@@ -50,6 +52,7 @@ interface ClientIdentity {
   ],
 })
 export class ClientOrdersComponent {
+  private readonly marketHours = inject(MarketHoursService);
   @ViewChild(OrderFormComponent) private orderForm?: OrderFormComponent;
 
   submitting = false;
@@ -187,7 +190,10 @@ export class ClientOrdersComponent {
           this.showMessage('✅ Orden de cliente enviada correctamente');
           this.orderForm?.reset();
         },
-        error: () => this.showMessage('❌ No hay respuesta del servidor', true),
+        error: (error) => {
+          if (error.status === 409) this.marketHours.refresh();
+          this.showMessage(error.error?.title || 'No se pudo registrar la orden. Inténtalo de nuevo.', true);
+        },
       });
   }
 

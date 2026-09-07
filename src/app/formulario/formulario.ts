@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectorRef, Component, ViewChild } from '@angular/core';
+import { ChangeDetectorRef, Component, ViewChild, inject } from '@angular/core';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { FormsModule } from '@angular/forms';
@@ -10,12 +10,14 @@ import { OrderFormComponent } from '../orders/components/order-form/order-form';
 import { MarketOption, OrderFormValue } from '../orders/models/order-form-value';
 import { PropuestaService } from '../services/PropuestaService';
 import { RepresentanteService } from '../services/RepresentanteService';
+import { MarketHoursService } from '../orders/services/market-hours.service';
 
 @Component({
   selector: 'app-pagina-form',
   standalone: true,
   templateUrl: './formulario.html',
   styleUrls: ['./formulario.css'],
+  providers: [MarketHoursService],
   imports: [
     CommonModule,
     FormsModule,
@@ -25,6 +27,7 @@ import { RepresentanteService } from '../services/RepresentanteService';
   ],
 })
 export class FormularioComponent {
+  private readonly marketHours = inject(MarketHoursService);
   @ViewChild(OrderFormComponent) private orderForm?: OrderFormComponent;
 
   nombreOperador = '';
@@ -50,6 +53,11 @@ export class FormularioComponent {
   }
 
   submitOrder(order: OrderFormValue): void {
+    const hours = this.marketHours.current();
+    if (!hours || !hours.isOpen && (hours.applyToAllMarkets || ['BVL', '01', 'LOCAL'].includes(order.mercado.toUpperCase()))) {
+      this.marketHours.refresh();
+      return;
+    }
     if (!this.codigoClienteSeleccionado) {
       this.showMessage('⚠️ Debe seleccionar un código de cliente', true);
       return;
@@ -105,7 +113,10 @@ export class FormularioComponent {
         this.showMessage('✅ Propuesta enviada correctamente');
         this.orderForm?.reset();
       },
-      error: () => this.showMessage('❌ No hay respuesta del servidor', true),
+      error: (error) => {
+        if (error.status === 409) this.marketHours.refresh();
+        this.showMessage(error.error?.title || 'No se pudo registrar la orden. Inténtalo de nuevo.', true);
+      },
     });
   }
 

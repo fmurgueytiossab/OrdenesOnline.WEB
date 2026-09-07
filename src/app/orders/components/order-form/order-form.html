@@ -1,4 +1,5 @@
-<div class="order-form">
+<div class="schedule-shell">
+<div class="order-form" [attr.inert]="scheduleBlocked ? '' : null" [attr.aria-disabled]="controlsDisabled">
   <section class="form-section" aria-labelledby="operation-section-title">
     <header class="section-header">
       <span class="section-number" aria-hidden="true">1</span>
@@ -15,7 +16,7 @@
           <mat-label>Selecciona una operación</mat-label>
           <mat-select
             [(ngModel)]="tipo"
-            [disabled]="submitting || disabled"
+            [disabled]="submitting || controlsDisabled"
             panelClass="order-select-panel">
             <mat-select-trigger>
               <span class="order-select-trigger">
@@ -56,7 +57,7 @@
                 role="radio"
                 [attr.aria-checked]="mercado === option.code"
                 [class.active]="mercado === option.code"
-                [disabled]="submitting || disabled"
+                [disabled]="submitting || controlsDisabled"
                 (click)="mercado = option.code">
                 <span><strong>{{ option.name }}</strong><small>Seleccionar</small></span>
               </button>
@@ -70,7 +71,7 @@
             <mat-label>Selecciona un canal</mat-label>
             <mat-select
               [(ngModel)]="mercado"
-              [disabled]="submitting || disabled"
+              [disabled]="submitting || controlsDisabled"
               panelClass="order-select-panel">
               <mat-select-trigger>
                 <span class="order-select-trigger">
@@ -125,7 +126,7 @@
               (ngModelChange)="filterValues($event)"
               (blur)="validateInstrument()"
               [matAutocomplete]="auto"
-              [disabled]="submitting || disabled"
+              [disabled]="submitting || controlsDisabled"
               placeholder="Ej. AAPL">
             <mat-autocomplete #auto="matAutocomplete" (optionSelected)="selectInstrument($event.option.value)">
               @for (value of valoresFiltrados; track value.cosabval) {
@@ -137,7 +138,7 @@
 
           <mat-form-field appearance="outline" class="form-field currency-field">
             <mat-label>Moneda</mat-label>
-            <input matInput [value]="descripcionMoneda" readonly [disabled]="submitting || disabled" placeholder="Automática">
+            <input matInput [value]="descripcionMoneda" readonly [disabled]="submitting || controlsDisabled" placeholder="Automática">
             <mat-hint>Se completa al elegir el instrumento</mat-hint>
           </mat-form-field>
         </div>
@@ -158,7 +159,7 @@
               min="0"
               [(ngModel)]="cantidad"
               (ngModelChange)="montoManual = null"
-              [disabled]="submitting || disabled"
+              [disabled]="submitting || controlsDisabled"
               placeholder="0">
           </mat-form-field>
 
@@ -172,7 +173,7 @@
               min="0.001"
               [(ngModel)]="precio"
               (blur)="formatPrice()"
-              [disabled]="esAMercado || submitting || disabled"
+              [disabled]="esAMercado || submitting || controlsDisabled"
               placeholder="0.000">
             <mat-hint>{{ esAMercado ? 'No aplica para una orden a mercado' : 'Precio máximo o mínimo de ejecución' }}</mat-hint>
           </mat-form-field>
@@ -181,7 +182,7 @@
             <mat-checkbox
               [(ngModel)]="esAMercado"
               (change)="updateOrderType()"
-              [disabled]="submitting || disabled">
+              [disabled]="submitting || controlsDisabled">
               A mercado
             </mat-checkbox>
             <small>Se ejecutará al mejor precio disponible.</small>
@@ -206,7 +207,7 @@
         <mat-select
           [(ngModel)]="tipoVigencia"
           (selectionChange)="updateValidity()"
-          [disabled]="submitting || disabled"
+          [disabled]="submitting || controlsDisabled"
           panelClass="order-select-panel">
           <mat-select-trigger>
             <span class="order-select-trigger compact">
@@ -231,6 +232,13 @@
         </mat-select>
       </mat-form-field>
 
+      @if (deferredValidity) {
+        <div class="next-session-notice" role="status">
+          <strong>{{ tipoVigencia === 'Fecha' ? 'Vigencia desde la próxima sesión' : validityLabel('Hoy') }} · {{ dayValidityDate | date: 'dd/MM/yyyy' : 'UTC' }}</strong>
+          <span>La sesión de hoy ya no está disponible. Puedes registrar tu orden para la próxima sesión.</span>
+        </div>
+      }
+
       @if (tipoVigencia === 'Fecha') {
         <mat-form-field appearance="outline" class="form-field">
           <mat-label>Fecha de vigencia</mat-label>
@@ -239,7 +247,7 @@
             [matDatepicker]="picker"
             [(ngModel)]="fechaSeleccionada"
             [min]="minFecha"
-            [disabled]="submitting || disabled">
+            [disabled]="submitting || controlsDisabled">
           <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
           <mat-datepicker #picker></mat-datepicker>
         </mat-form-field>
@@ -254,7 +262,7 @@
           [value]="monto ?? ''"
           (input)="updateAmount($event)"
           [readonly]="cantidad !== 0"
-          [disabled]="submitting || disabled || (esAMercado && cantidad !== 0)"
+          [disabled]="submitting || controlsDisabled || (esAMercado && cantidad !== 0)"
           placeholder="0.00">
         <mat-hint>{{ cantidad === 0 ? 'Ingresa el monto de la operación' : 'Calculado automáticamente' }}</mat-hint>
       </mat-form-field>
@@ -281,15 +289,42 @@
   </section>
 
   <footer class="actions-row">
-    <button mat-button class="back-button" type="button" (click)="cancelled.emit()" [disabled]="submitting || disabled">
+    <button mat-button class="back-button" type="button" (click)="cancelled.emit()" [disabled]="submitting || controlsDisabled">
       @if (showCancelArrow) {
         <span aria-hidden="true">←</span>
       }
       {{ cancelLabel }}
     </button>
-    <button mat-flat-button color="primary" class="submit-button" type="button" (click)="submit()" [disabled]="submitting || disabled">
+    <button mat-flat-button color="primary" class="submit-button" type="button" (click)="submit()" [disabled]="submitting || controlsDisabled">
       <span>{{ submitting ? 'Enviando…' : 'Enviar orden' }}</span>
       @if (!submitting) { <span aria-hidden="true">→</span> }
     </button>
   </footer>
+</div>
+@if (scheduleBlocked && !disabled) {
+  <div class="schedule-blocker" role="status" aria-live="polite">
+    <div class="schedule-message">
+      <span class="schedule-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></svg>
+      </span>
+      @if (marketHours.current(); as hours) {
+        <h3>Fuera del horario de recepción</h3>
+        <p>Debes esperar hasta la próxima apertura para ingresar una orden.</p>
+        <div class="next-opening">
+          <span>Podrás registrar órdenes el</span>
+          <strong>{{ hours.nextOpenAt | date: 'dd/MM/yyyy, HH:mm' : '-0500' }}</strong>
+          <span>Hora de Perú</span>
+        </div>
+        <small>Horario de hoy: {{ hours.opensAt | date: 'HH:mm' : '-0500' }}–{{ hours.closesAt | date: 'HH:mm' : '-0500' }}. Conservaremos los datos que ingresaste mientras esta pantalla siga abierta.</small>
+      } @else if (marketHours.failed()) {
+        <h3>No pudimos verificar el horario</h3>
+        <p>Reintenta para conocer la sesión y la vigencia disponibles.</p>
+        <button type="button" class="schedule-retry" (click)="marketHours.refresh()">Reintentar</button>
+      } @else {
+        <h3>Verificando horario…</h3>
+        <p>Estamos consultando la sesión disponible para tu orden.</p>
+      }
+    </div>
+  </div>
+}
 </div>

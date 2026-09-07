@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+import { Component, EventEmitter, Input, OnInit, Output, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MatButtonModule } from '@angular/material/button';
@@ -15,6 +15,7 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { Valor } from '../../../Model/Valor';
 import { ValorService } from '../../../services/ValorService';
 import { MarketOption, OrderFormValue } from '../../models/order-form-value';
+import { MarketHoursService } from '../../services/market-hours.service';
 
 @Component({
   selector: 'app-order-form',
@@ -45,6 +46,8 @@ export class OrderFormComponent implements OnInit {
   @Input() initialValue: Partial<OrderFormValue> | null = null;
   @Input() cancelLabel = 'Volver';
   @Input() showCancelArrow = true;
+  @Input() portal: 'representatives' | 'clients' = 'clients';
+  readonly marketHours = inject(MarketHoursService);
 
   @Output() orderSubmitted = new EventEmitter<OrderFormValue>();
   @Output() cancelled = new EventEmitter<void>();
@@ -61,7 +64,35 @@ export class OrderFormComponent implements OnInit {
   descripcionMoneda = '';
   tipoVigencia = 'Hoy';
   fechaSeleccionada: Date | null = null;
-  readonly minFecha = new Date(new Date().setDate(new Date().getDate() + 1));
+  get minFecha(): Date {
+    const state = this.marketHours.current();
+    const value = state?.validForDate ?? this.peruToday();
+    const date = this.dateFromIso(value);
+    if (value === state?.today) date.setDate(date.getDate() + 1);
+    return date;
+  }
+
+  get scheduleApplies(): boolean {
+    return this.marketHours.current()?.applyToAllMarkets !== false
+      || ['BVL', '01', 'LOCAL'].includes(this.mercado.toUpperCase());
+  }
+
+  get scheduleBlocked(): boolean {
+    const state = this.marketHours.current();
+    return !state || this.portal === 'representatives' && this.scheduleApplies && !state.isOpen;
+  }
+
+  get controlsDisabled(): boolean { return this.disabled || this.scheduleBlocked; }
+
+  get dayValidityDate(): string {
+    const state = this.marketHours.current();
+    return (this.scheduleApplies ? state?.validForDate : state?.today) ?? this.peruToday();
+  }
+
+  get deferredValidity(): boolean {
+    const state = this.marketHours.current();
+    return !!state && this.scheduleApplies && state.validForDate !== state.today;
+  }
 
   valores: Valor[] = [];
   valoresFiltrados: Valor[] = [];
@@ -110,16 +141,21 @@ export class OrderFormComponent implements OnInit {
 
   validityLabel(value: string): string {
     if (value === 'Fecha') return 'Hasta una fecha';
+    if (this.deferredValidity) {
+      const tomorrow = this.dateFromIso(this.marketHours.current()!.today);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      return this.isoDate(tomorrow) === this.dayValidityDate ? 'Solo para mañana' : 'Próxima sesión';
+    }
     return 'Por hoy';
   }
 
   validityDescription(value: string): string {
     if (value === 'Fecha') return 'Elige el último día de vigencia';
-    return 'Válida hasta el cierre de hoy';
+    return `Solo el ${this.formatDate(this.dayValidityDate)} · hasta el cierre`;
   }
 
   submit(): void {
-    if (this.disabled || this.submitting) return;
+    if (this.controlsDisabled || this.submitting) return;
 
     if (!this.mercado) {
       this.showError('Debe seleccionar un mercado');
@@ -133,6 +169,12 @@ export class OrderFormComponent implements OnInit {
 
     if (this.tipoVigencia === 'Fecha' && !this.fechaSeleccionada) {
       this.showError('Debe seleccionar la fecha de vigencia');
+      return;
+    }
+
+    if (this.tipoVigencia === 'Fecha' && this.fechaSeleccionada
+      && this.isoDate(this.fechaSeleccionada) < this.dayValidityDate) {
+      this.showError(`La vigencia debe ser desde el ${this.formatDate(this.dayValidityDate)}. Revisa la fecha.`);
       return;
     }
 
@@ -233,8 +275,23 @@ export class OrderFormComponent implements OnInit {
       const month = (this.fechaSeleccionada.getMonth() + 1).toString().padStart(2, '0');
       return `Hasta el ${day}/${month}/${this.fechaSeleccionada.getFullYear()}`;
     }
-    return `Por hoy : ${new Date().toLocaleDateString('es-PE')}`;
+    return `Solo el ${this.formatDate(this.dayValidityDate)}`;
   }
+
+  private peruToday(): string {
+    return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Lima', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
+  }
+
+  private dateFromIso(value: string): Date {
+    const [year, month, day] = value.split('-').map(Number);
+    return new Date(year, month - 1, day);
+  }
+
+  private isoDate(value: Date): string {
+    return `${value.getFullYear()}-${String(value.getMonth() + 1).padStart(2, '0')}-${String(value.getDate()).padStart(2, '0')}`;
+  }
+
+  private formatDate(value: string): string { return value.split('-').reverse().join('/'); }
 
   private applyInitialValue(value: Partial<OrderFormValue>): void {
     this.tipo = value.tipo ?? this.tipo;
