@@ -233,7 +233,7 @@ h1 {
 
 .filter-grid {
   display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr)) auto;
   align-items: end;
   gap: 0.9rem;
 }
@@ -300,8 +300,7 @@ h1 {
   display: none;
 }
 
-:host ::ng-deep .material-filter-field .mat-mdc-select-arrow-wrapper,
-:host ::ng-deep .date-filter-field .mat-datepicker-toggle {
+:host ::ng-deep .material-filter-field .mat-mdc-select-arrow-wrapper {
   width: 2rem;
   height: 2rem;
   flex: 0 0 2rem;
@@ -314,31 +313,9 @@ h1 {
   transition: color 150ms ease, background 150ms ease;
 }
 
-:host ::ng-deep .material-filter-field.mat-focused .mat-mdc-select-arrow-wrapper,
-:host ::ng-deep .date-filter-field:focus-within .mat-datepicker-toggle {
+:host ::ng-deep .material-filter-field.mat-focused .mat-mdc-select-arrow-wrapper {
   color: var(--blue);
   background: var(--blue-soft);
-}
-
-:host ::ng-deep .date-filter-field .mat-mdc-icon-button {
-  width: 2rem;
-  height: 2rem;
-  padding: 0.42rem;
-}
-
-:host ::ng-deep .date-filter-field .mat-datepicker-toggle svg {
-  width: 1.05rem;
-  height: 1.05rem;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 1.8;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-
-:host ::ng-deep .date-filter-field input {
-  color: #101828;
-  font: inherit;
 }
 
 .search-button { min-width: 7rem; }
@@ -416,9 +393,6 @@ td small {
 .channel-pill { color: #344054; background: #f2f4f7; }
 
 .status[data-status="PENDIENTE"] { color: #b54708; background: #fffaeb; }
-.status[data-status="PARCIAL"] { color: #175cd3; background: #eff8ff; }
-.status[data-status="EJECUTADA"] { color: #027a48; background: #ecfdf3; }
-.status[data-status="ANULADA"] { color: #475467; background: #f2f4f7; }
 
 .side-indicator {
   display: inline-block;

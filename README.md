@@ -57,3 +57,13 @@ Angular CLI does not come with an end-to-end testing framework by default. You c
 ## Additional Resources
 
 For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+
+## Seguimiento de propuestas
+
+`/Clientes/seguimiento` consulta `GET /api/PropuestaCliente/seguimiento` y muestra las propuestas del día de Perú (UTC-05), desde la tabla `propuesta` de DATAWEB. El backend convierte ese día a un intervalo UTC para filtrar `Fecha_Registro` y mantiene el alcance de clientes del usuario autenticado.
+
+Las pestañas son Todas, BVL, Canaccord y Euroclear. No hay filtros Desde/Hasta. Las propuestas sin una política identificable, como las antiguas guardadas como `Extranjero`, aparecen únicamente en Todas con su mercado original. Las nuevas órdenes de ambos portales permiten identificar la política; el backend de Clientes acepta `01` (BVL), `98` (Canaccord) y `16` (Euroclear).
+
+Por ahora, el seguimiento muestra todas las propuestas como Pendiente, con cantidad ejecutada y anulada en cero. No requiere coincidencias con operaciones externas ni modifica el estado de revisión de la propuesta. La actualización automática conserva los filtros y la página actual cuando sigue existiendo.
+
+Este cambio requiere publicar frontend y backend juntos. El endpoint antiguo `/api/PropuestaCliente/seguimiento/bvl` fue retirado; se utiliza el endpoint combinado indicado arriba.

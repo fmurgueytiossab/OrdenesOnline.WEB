@@ -5,19 +5,11 @@ import { EMPTY, Observable, expand, map, reduce, tap } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import {
   ClientOrder,
-  ClientOrderStatus,
-  ExecutionChannel,
   TrackingItemResponse,
   TrackingPageResponse,
 } from '../models/client-order';
 
 const TRACKING_PAGE_SIZE = 100;
-const TRACKING_STATUSES: ReadonlySet<string> = new Set([
-  'PENDIENTE',
-  'PARCIAL',
-  'EJECUTADA',
-  'ANULADA',
-]);
 
 @Injectable({ providedIn: 'root' })
 export class ClientOrderTrackingService {
@@ -76,8 +68,7 @@ export class ClientOrderTrackingService {
 
   private mapOrder(item: TrackingItemResponse): ClientOrder {
     const normalizedSide = item.tipo.trim().toUpperCase();
-    const normalizedStatus = item.estado.trim().toUpperCase();
-    const normalizedChannel = item.mercado.trim().toUpperCase() as ExecutionChannel;
+    const normalizedChannel = item.mercado.trim().toUpperCase();
 
     return {
       id: item.codigoOrden,
@@ -93,9 +84,7 @@ export class ClientOrderTrackingService {
       cancelledQuantity: item.cantidadAnulada,
       pendingQuantity: item.cantidadPendiente,
       price: item.precio,
-      status: TRACKING_STATUSES.has(normalizedStatus)
-        ? normalizedStatus as ClientOrderStatus
-        : 'PENDIENTE',
+      status: 'PENDIENTE',
     };
   }
 }

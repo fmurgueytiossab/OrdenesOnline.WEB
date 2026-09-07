@@ -161,38 +161,3 @@ mat-card-actions.actions-row {
   background: #eef4ff !important;
   font-weight: 700;
 }
-
-.tracking-datepicker-panel.mat-datepicker-content {
-  overflow: hidden;
-  border: 1px solid #e4e7ec;
-  border-radius: 1rem;
-  box-shadow: 0 1.25rem 3rem rgba(16, 24, 40, 0.2);
-}
-
-.tracking-datepicker-panel .mat-calendar {
-  width: 19.5rem;
-  height: auto;
-  padding: 0.35rem;
-}
-
-.tracking-datepicker-panel .mat-calendar-header {
-  padding: 0.65rem 0.75rem 0;
-}
-
-.tracking-datepicker-panel .mat-calendar-body-selected {
-  color: #fff;
-  background: #1f5eff;
-  box-shadow: 0 0.25rem 0.55rem rgba(31, 94, 255, 0.28);
-}
-
-.tracking-datepicker-panel .mat-calendar-body-today:not(.mat-calendar-body-selected) {
-  color: #1747c9;
-  border-color: #84adff;
-  background: #eef4ff;
-}
-
-.tracking-datepicker-panel .mat-datepicker-actions {
-  gap: 0.35rem;
-  padding: 0.65rem 0.85rem 0.85rem;
-  border-top: 1px solid #eaecf0;
-}

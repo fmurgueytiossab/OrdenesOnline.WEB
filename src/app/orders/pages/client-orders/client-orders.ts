@@ -197,6 +197,8 @@ export class ClientOrdersComponent {
 
   onClientSearchChange(value: string | ClienteSearchResult): void {
     this.clientSearch = value;
+    this.clientSearchError = false;
+    this.hasSearchedClients = false;
     if (typeof value !== 'string') {
       this.selectClient(value);
       return;
@@ -206,10 +208,13 @@ export class ClientOrdersComponent {
       this.clearSelectedClient();
     }
     this.clientResults = [];
+    this.searchingClients = value.trim().length >= 3;
     this.clientSearchTerms.next(value);
   }
 
   selectClient(result: ClienteSearchResult): void {
+    this.searchingClients = false;
+    this.clientSearchError = false;
     const phones = (result.nucel ?? []).map((phone) => phone.trim()).filter(Boolean);
     const bloqueoMotivo = result.bloqueoMotivo?.trim() ?? '';
 

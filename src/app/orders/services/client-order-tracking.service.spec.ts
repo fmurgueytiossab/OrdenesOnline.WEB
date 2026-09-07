@@ -45,9 +45,9 @@ describe('ClientOrderTrackingService', () => {
         channel: 'BVL',
         side: 'Compra',
         proposedQuantity: 100,
-        executedQuantity: 20,
-        pendingQuantity: 80,
-        status: 'PARCIAL',
+        executedQuantity: 0,
+        pendingQuantity: 100,
+        status: 'PENDIENTE',
       }),
     ]);
     expect(service.orders()).toEqual(result);
@@ -55,7 +55,7 @@ describe('ClientOrderTrackingService', () => {
     expect(service.getById('9001')?.id).toBe(41);
   });
 
-  it('maps Canaccord and Viewtrade into their tracking tabs', () => {
+  it('maps Canaccord and Euroclear into their tracking tabs', () => {
     service.loadOrders().subscribe();
 
     const request = httpTesting.expectOne(
@@ -64,7 +64,7 @@ describe('ClientOrderTrackingService', () => {
     request.flush({
       items: [
         { ...trackingItem(), codigoOrden: 42, numeroOperacion: 'CAN-1', mercado: 'CANACCORD' },
-        { ...trackingItem(), codigoOrden: 43, numeroOperacion: 'VIE-1', mercado: 'VIEWTRADE' },
+        { ...trackingItem(), codigoOrden: 43, numeroOperacion: 'EUR-1', mercado: 'EUROCLEAR' },
       ],
       page: 1,
       pageSize: 100,
@@ -74,7 +74,7 @@ describe('ClientOrderTrackingService', () => {
 
     expect(service.orders().map((order) => order.channel)).toEqual([
       'CANACCORD',
-      'VIEWTRADE',
+      'EUROCLEAR',
     ]);
   });
 
@@ -114,11 +114,11 @@ describe('ClientOrderTrackingService', () => {
       instrumento: ' ABC ',
       tipo: 'C',
       cantidadPropuesta: 100,
-      cantidadEjecutada: 20,
+      cantidadEjecutada: 0,
       cantidadAnulada: 0,
-      cantidadPendiente: 80,
+      cantidadPendiente: 100,
       precio: 12.5,
-      estado: 'PARCIAL',
+      estado: 'PENDIENTE',
       mercado: 'BVL',
     };
   }

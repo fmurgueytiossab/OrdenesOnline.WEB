@@ -123,7 +123,7 @@
   display: grid;
   grid-template-columns: 1.1fr 1.35fr 0.85fr 0.9fr;
   gap: 0.75rem;
-  align-items: stretch;
+  align-items: start;
 }
 
 .client-search-control {
@@ -132,10 +132,6 @@
 
 .client-search-field {
   width: 100%;
-}
-
-:host ::ng-deep .client-search-field .mat-mdc-form-field-subscript-wrapper {
-  min-height: 1rem;
 }
 
 .client-option {
@@ -156,16 +152,85 @@
   font-size: 0.7rem;
 }
 
-.search-status {
-  display: block;
-  margin: -0.7rem 0.85rem 0;
+.search-help {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin: 0.5rem 0.15rem 0;
   color: #667085;
-  font-size: 0.68rem;
+  font-size: 0.75rem;
+  line-height: 1.5;
 }
 
-.search-status.error {
-  color: #b42318;
+.search-feedback {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  margin-top: 0.65rem;
+  padding: 0.8rem;
+  color: #475467;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.7rem;
 }
+
+.search-feedback-icon {
+  display: grid;
+  place-items: center;
+  flex: 0 0 1.8rem;
+  height: 1.8rem;
+  background: #eef2f6;
+  border-radius: 0.5rem;
+}
+
+.search-feedback-icon svg {
+  width: 1.1rem;
+  height: 1.1rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+}
+
+.search-feedback-content { min-width: 0; }
+.search-feedback strong { display: block; font-size: 0.78rem; line-height: 1.5; }
+.search-feedback p { margin: 0.2rem 0 0; font-size: 0.74rem; line-height: 1.5; }
+.search-feedback-error { color: #912018; background: #fff7f6; border-color: #fee4e2; }
+.search-feedback-error .search-feedback-icon { background: #fee4e2; }
+
+.search-retry {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 2rem;
+  margin-top: 0.5rem;
+  padding: 0.3rem 0.55rem;
+  color: #912018;
+  background: #fff;
+  border: 1px solid #fecdca;
+  border-radius: 0.4rem;
+  font: inherit;
+  font-size: 0.73rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.search-retry:hover { background: #fee4e2; }
+.search-retry:focus-visible { outline: 2px solid #b42318; outline-offset: 3px; }
+.search-retry:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.search-spinner {
+  width: 0.8rem;
+  height: 0.8rem;
+  flex: 0 0 0.8rem;
+  border: 2px solid #dbe4f0;
+  border-top-color: #2563eb;
+  border-radius: 50%;
+  animation: client-search-spin 0.8s linear infinite;
+}
+
+@keyframes client-search-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .search-spinner { animation: none; } }
 
 .readonly-field {
   min-width: 0;

@@ -1,10 +1,6 @@
-export type ExecutionChannel = 'BVL' | 'CANACCORD' | 'VIEWTRADE';
+export type ExecutionChannel = 'BVL' | 'CANACCORD' | 'EUROCLEAR';
 
-export type ClientOrderStatus =
-  | 'PENDIENTE'
-  | 'PARCIAL'
-  | 'EJECUTADA'
-  | 'ANULADA';
+export type ClientOrderStatus = 'PENDIENTE';
 
 export interface ClientOrder {
   id: number;
@@ -12,7 +8,7 @@ export interface ClientOrder {
   proposalDate: string;
   proposalTime: string | null;
   operationNumber: string;
-  channel: ExecutionChannel;
+  channel: string;
   instrument: string;
   side: 'Compra' | 'Venta';
   proposedQuantity: number;
@@ -54,12 +50,9 @@ export const EXECUTION_CHANNELS: ReadonlyArray<{
 }> = [
   { code: 'BVL', name: 'BVL' },
   { code: 'CANACCORD', name: 'Canaccord' },
-  { code: 'VIEWTRADE', name: 'Viewtrade' },
+  { code: 'EUROCLEAR', name: 'Euroclear' },
 ];
 
 export const CLIENT_ORDER_STATUS_LABELS: Record<ClientOrderStatus, string> = {
   PENDIENTE: 'Pendiente',
-  PARCIAL: 'Parcial',
-  EJECUTADA: 'Ejecutada',
-  ANULADA: 'Anulada',
 };

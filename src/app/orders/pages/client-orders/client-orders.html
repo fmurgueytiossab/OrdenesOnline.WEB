@@ -29,7 +29,7 @@
 
       <div class="identity-grid" [attr.aria-busy]="searchingClients">
         <div class="client-search-control">
-          <mat-form-field appearance="outline" class="client-search-field">
+          <mat-form-field appearance="outline" class="client-search-field" subscriptSizing="dynamic">
             <mat-label>Nombre del cliente</mat-label>
             <input
               matInput
@@ -37,6 +37,7 @@
               (ngModelChange)="onClientSearchChange($event)"
               [matAutocomplete]="clientAutocomplete"
               [disabled]="submitting"
+              aria-describedby="client-search-status"
               autocomplete="off"
               placeholder="Escribe al menos 3 caracteres">
             <mat-autocomplete
@@ -51,19 +52,35 @@
                 </mat-option>
               }
             </mat-autocomplete>
-            <mat-hint>
-              @if (searchingClients) {
-                Buscando clientes…
-              } @else {
-                Selecciona una persona de los resultados
-              }
-            </mat-hint>
           </mat-form-field>
-          @if (clientSearchError) {
-            <small class="search-status error" role="alert">No se pudo realizar la búsqueda.</small>
-          } @else if (hasSearchedClients && clientResults.length === 0 && !client) {
-            <small class="search-status" aria-live="polite">No se encontraron clientes.</small>
-          }
+          <div id="client-search-status" aria-live="polite" aria-atomic="true">
+            @if (searchingClients) {
+              <p class="search-help"><span class="search-spinner" aria-hidden="true"></span>Buscando clientes…</p>
+            } @else if (clientSearchError) {
+              <div class="search-feedback search-feedback-error">
+                <span class="search-feedback-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" /><path d="M12 7v6m0 3h.01" /></svg>
+                </span>
+                <div class="search-feedback-content">
+                  <strong>No pudimos buscar</strong>
+                  <p>Inténtalo de nuevo en un momento.</p>
+                  <button type="button" class="search-retry" [disabled]="submitting" (click)="onClientSearchChange(clientSearch)">Reintentar búsqueda <span aria-hidden="true">↻</span></button>
+                </div>
+              </div>
+            } @else if (hasSearchedClients && clientResults.length === 0 && !client) {
+              <div class="search-feedback">
+                <span class="search-feedback-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5" /><path d="m16 16 4 4" /></svg>
+                </span>
+                <div class="search-feedback-content">
+                  <strong>Sin coincidencias</strong>
+                  <p>Revisa el nombre o prueba con otro apellido.</p>
+                </div>
+              </div>
+            } @else if (!client) {
+              <p class="search-help">{{ clientResults.length ? 'Selecciona un cliente de la lista.' : 'Escribe al menos 3 caracteres para buscar.' }}</p>
+            }
+          </div>
         </div>
 
         <div class="readonly-field">

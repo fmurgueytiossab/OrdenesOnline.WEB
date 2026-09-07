@@ -35,8 +35,9 @@ export class FormularioComponent {
   enviando = false;
 
   readonly markets: MarketOption[] = [
-    { code: 'Local', name: 'Local' },
-    { code: 'Extranjero', name: 'Extranjero' },
+    { code: 'BVL', name: 'BVL' },
+    { code: 'Canaccord', name: 'Canaccord' },
+    { code: 'Euroclear', name: 'Euroclear' },
   ];
 
   constructor(

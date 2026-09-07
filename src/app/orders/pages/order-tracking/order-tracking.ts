@@ -2,11 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, DestroyRef, OnInit, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
-import { MatButtonModule } from '@angular/material/button';
-import { MAT_DATE_LOCALE, MatNativeDateModule } from '@angular/material/core';
-import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { ActivatedRoute, Router } from '@angular/router';
 import { finalize, timer } from 'rxjs';
@@ -30,14 +26,9 @@ type SideFilter = ClientOrder['side'] | 'ALL';
   imports: [
     CommonModule,
     FormsModule,
-    MatButtonModule,
-    MatDatepickerModule,
     MatFormFieldModule,
-    MatInputModule,
-    MatNativeDateModule,
     MatSelectModule,
   ],
-  providers: [{ provide: MAT_DATE_LOCALE, useValue: 'es-PE' }],
   templateUrl: './order-tracking.html',
   styleUrl: './order-tracking.css',
 })
@@ -54,8 +45,6 @@ export class OrderTrackingComponent implements OnInit {
   selectedSide: SideFilter = 'ALL';
   orderNumber = '';
   instrument = '';
-  startDate: Date | null = null;
-  endDate: Date | null = null;
   currentPage = 1;
 
   loading = false;
@@ -80,8 +69,6 @@ export class OrderTrackingComponent implements OnInit {
   get filteredOrders(): ClientOrder[] {
     const orderNumber = this.orderNumber.trim().toLowerCase();
     const instrument = this.instrument.trim().toLowerCase();
-    const startDate = this.formatDateQuery(this.startDate);
-    const endDate = this.formatDateQuery(this.endDate);
 
     return this.trackingService.orders().filter((order) => {
       if (this.selectedChannel !== 'ALL' && order.channel !== this.selectedChannel) return false;
@@ -93,8 +80,6 @@ export class OrderTrackingComponent implements OnInit {
         && !order.operationNumber.toLowerCase().includes(orderNumber)
       ) return false;
       if (instrument && !order.instrument.toLowerCase().includes(instrument)) return false;
-      if (startDate && order.proposalDate < startDate) return false;
-      if (endDate && order.proposalDate > endDate) return false;
       return true;
     });
   }
@@ -157,8 +142,6 @@ export class OrderTrackingComponent implements OnInit {
     this.selectedSide = 'ALL';
     this.orderNumber = '';
     this.instrument = '';
-    this.startDate = null;
-    this.endDate = null;
     this.currentPage = 1;
     this.updateUrl();
   }
@@ -187,7 +170,7 @@ export class OrderTrackingComponent implements OnInit {
     return this.statusLabels[status];
   }
 
-  formatChannel(channel: ExecutionChannel): string {
+  formatChannel(channel: string): string {
     return this.channels.find((item) => item.code === channel)?.name ?? channel;
   }
 
@@ -222,8 +205,6 @@ export class OrderTrackingComponent implements OnInit {
 
     this.orderNumber = query.get('order') ?? '';
     this.instrument = query.get('instrument') ?? '';
-    this.startDate = this.parseDateQuery(query.get('from'));
-    this.endDate = this.parseDateQuery(query.get('to'));
     this.currentPage = Number.isInteger(page) && page > 0 ? page : 1;
   }
 
@@ -236,36 +217,10 @@ export class OrderTrackingComponent implements OnInit {
         side: this.selectedSide === 'ALL' ? null : this.selectedSide,
         order: this.orderNumber.trim() || null,
         instrument: this.instrument.trim() || null,
-        from: this.formatDateQuery(this.startDate),
-        to: this.formatDateQuery(this.endDate),
         page: this.currentPage > 1 ? this.currentPage : null,
       },
       replaceUrl: true,
     });
   }
 
-  private formatDateQuery(date: Date | null): string | null {
-    if (!date || Number.isNaN(date.getTime())) return null;
-
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  }
-
-  private parseDateQuery(value: string | null): Date | null {
-    const match = value?.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-    if (!match) return null;
-
-    const year = Number(match[1]);
-    const month = Number(match[2]);
-    const day = Number(match[3]);
-    const date = new Date(year, month - 1, day);
-
-    return date.getFullYear() === year
-      && date.getMonth() === month - 1
-      && date.getDate() === day
-      ? date
-      : null;
-  }
 }

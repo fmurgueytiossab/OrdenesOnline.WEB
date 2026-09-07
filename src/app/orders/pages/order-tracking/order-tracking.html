@@ -4,7 +4,7 @@
       <div>
         <span class="eyebrow">Portal de clientes</span>
         <h1 id="tracking-title">Seguimiento de órdenes</h1>
-        <p>Consulta el estado y el detalle actualizado de tus operaciones.</p>
+        <p>Consulta las propuestas de hoy y su detalle por política.</p>
       </div>
       <button class="secondary-button" type="button" [disabled]="loading" (click)="refreshOrders()">
         {{ loading ? 'Actualizando…' : 'Actualizar' }}
@@ -65,9 +65,6 @@
               panelClass="tracking-select-panel">
               <mat-option value="ALL">Todos</mat-option>
               <mat-option value="PENDIENTE">Pendiente</mat-option>
-              <mat-option value="PARCIAL">Parcial</mat-option>
-              <mat-option value="EJECUTADA">Ejecutada</mat-option>
-              <mat-option value="ANULADA">Anulada</mat-option>
             </mat-select>
           </mat-form-field>
         </div>
@@ -92,57 +89,6 @@
           </mat-form-field>
         </div>
 
-        <div class="filter-control">
-          <label for="start-date-filter">Desde</label>
-          <mat-form-field appearance="outline" class="material-filter-field date-filter-field" subscriptSizing="dynamic">
-            <input
-              id="start-date-filter"
-              matInput
-              name="startDate"
-              [matDatepicker]="startPicker"
-              [(ngModel)]="startDate"
-              placeholder="dd/mm/aaaa"
-              autocomplete="off" />
-            <mat-datepicker-toggle matIconSuffix [for]="startPicker" aria-label="Abrir calendario desde">
-              <svg matDatepickerToggleIcon viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M7 3v3M17 3v3M4.5 9h15M6 5h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2Z" />
-              </svg>
-            </mat-datepicker-toggle>
-            <mat-datepicker #startPicker panelClass="tracking-datepicker-panel">
-              <mat-datepicker-actions>
-                <button mat-button type="button" matDatepickerCancel>Cancelar</button>
-                <button mat-flat-button type="button" color="primary" matDatepickerApply>Aplicar</button>
-              </mat-datepicker-actions>
-            </mat-datepicker>
-          </mat-form-field>
-        </div>
-
-        <div class="filter-control">
-          <label for="end-date-filter">Hasta</label>
-          <mat-form-field appearance="outline" class="material-filter-field date-filter-field" subscriptSizing="dynamic">
-            <input
-              id="end-date-filter"
-              matInput
-              name="endDate"
-              [matDatepicker]="endPicker"
-              [(ngModel)]="endDate"
-              [min]="startDate"
-              placeholder="dd/mm/aaaa"
-              autocomplete="off" />
-            <mat-datepicker-toggle matIconSuffix [for]="endPicker" aria-label="Abrir calendario hasta">
-              <svg matDatepickerToggleIcon viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M7 3v3M17 3v3M4.5 9h15M6 5h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2Z" />
-              </svg>
-            </mat-datepicker-toggle>
-            <mat-datepicker #endPicker panelClass="tracking-datepicker-panel">
-              <mat-datepicker-actions>
-                <button mat-button type="button" matDatepickerCancel>Cancelar</button>
-                <button mat-flat-button type="button" color="primary" matDatepickerApply>Aplicar</button>
-              </mat-datepicker-actions>
-            </mat-datepicker>
-          </mat-form-field>
-        </div>
-
         <button class="search-button" type="submit">
           <span aria-hidden="true">⌕</span>
           Buscar
@@ -153,7 +99,7 @@
     <section class="results" aria-labelledby="results-title">
       <div class="results-heading">
         <div>
-          <h2 id="results-title">Tus órdenes</h2>
+          <h2 id="results-title">Tus órdenes de hoy</h2>
           <p>{{ filteredOrders.length }} {{ filteredOrders.length === 1 ? 'resultado' : 'resultados' }}</p>
         </div>
         @if (lastUpdatedAt) {
