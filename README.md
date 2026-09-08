@@ -72,17 +72,18 @@ Este cambio requiere publicar frontend y backend juntos. El endpoint antiguo `/a
 
 El horario se aplica a BVL, Canaccord y Euroclear en ambos portales. `GET /api/MarketHours` informa la hora del servidor y la sesión disponible. La pantalla actualiza el estado al llegar al cierre; el backend valida nuevamente cada envío.
 
-- Representantes: solo pueden registrar durante la sesión. Fuera del horario, una capa de bloqueo muestra la próxima apertura y conserva el formulario mientras la pantalla permanezca abierta.
+- Representantes: pueden registrar desde las 06:00 hasta el cierre configurado. Fuera de ese horario, una capa de bloqueo muestra el próximo inicio de recepción y conserva el formulario mientras la pantalla permanezca abierta.
 - Clientes: pueden registrar después del cierre para la próxima sesión. La opción diaria muestra **Solo para mañana** y la fecha, o **Próxima sesión** si siguen días sin negociación. Se guarda y se envía por correo una fecha absoluta, como `Solo el 08/09/2026`.
 - Si el cierre ocurre durante el envío, la API responde `409` cuando la vigencia quedó desactualizada. Se conserva el formulario para revisar la nueva fecha y volver a enviar.
 
 La configuración está en `OrdenesOnline-API/market-hours.json` del backend y debe incluirse al publicar. Los horarios están expresados en hora de Perú:
 
-- `EarlySeason`: 08:30–15:00, desde el segundo domingo de marzo.
-- `LateSeason`: 09:30–16:00, desde el primer domingo de noviembre. En 2026, la primera sesión de ese período corresponde al lunes 2 de noviembre.
+- `OrderEntryOpen`: inicio fijo de recepción para representantes a las 06:00.
+- `EarlySeason.Close`: cierre a las 15:00, desde el segundo domingo de marzo.
+- `LateSeason.Close`: cierre a las 16:00, desde el primer domingo de noviembre. En 2026, la primera sesión de ese período corresponde al lunes 2 de noviembre.
 - `ClosedDates`: feriados bursátiles; se cargó el calendario oficial de 2026. Actualizar esta lista para los años siguientes.
-- `Overrides`: excepciones por fecha. Por ejemplo, `"2026-12-24": { "Open": "09:30", "Close": "13:00" }` permitiría configurar un cierre especial; es solo un ejemplo, no un horario oficial cargado. `IsClosed: true` permite suspender una sesión.
+- `Overrides`: excepciones por fecha para `Close` o `IsClosed`. Por ejemplo, `"2026-12-24": { "Close": "13:00" }` permitiría configurar un cierre especial; es solo un ejemplo, no un horario oficial cargado. La apertura bursátil no modifica el inicio fijo de recepción.
 
-El servidor relee los cambios de ese archivo. También admite variables como `MarketHours__EarlySeason__Close`. El cambio estacional es automático; las modificaciones extraordinarias de la BVL requieren actualizar la configuración. Se utiliza el corte solicitado de 15:00/16:00, sin incluir fases posteriores de negociación.
+El servidor relee los cambios de ese archivo. También admite variables como `MarketHours__OrderEntryOpen` y `MarketHours__EarlySeason__Close`. La recepción inicia a una hora única y el cambio estacional solo ajusta el cierre; las modificaciones extraordinarias de la BVL requieren actualizar la configuración. Se utiliza el corte solicitado de 15:00/16:00, sin incluir fases posteriores de negociación.
 
 Fuentes: [horarios y cambio estacional de la BVL](https://documents.bvl.com.pe/empresas/alertas/DISPOSICIONES%20COMPLEMENTARIAS%20AL%20RO%2024.11.pdf) y [calendario de feriados bursátiles 2026](https://documents.bvl.com.pe/pubdif/boldia/bolnota.htm).

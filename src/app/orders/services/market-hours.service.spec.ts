@@ -11,8 +11,8 @@ describe('MarketHoursService server clock', () => {
   const url = `${environment.apiUrl}/MarketHours`;
   const open: MarketHoursSnapshot = {
     serverNow: '2026-09-07T14:59:59-05:00', today: '2026-09-07',
-    opensAt: '2026-09-07T08:30:00-05:00', closesAt: '2026-09-07T15:00:00-05:00',
-    isOpen: true, nextOpenAt: '2026-09-08T08:30:00-05:00', validForDate: '2026-09-07',
+    opensAt: '2026-09-07T06:00:00-05:00', closesAt: '2026-09-07T15:00:00-05:00',
+    isOpen: true, nextOpenAt: '2026-09-08T06:00:00-05:00', validForDate: '2026-09-07',
     nextTransitionAt: '2026-09-07T15:00:00-05:00', applyToAllMarkets: true,
   };
 

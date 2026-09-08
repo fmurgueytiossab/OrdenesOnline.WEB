@@ -12,9 +12,9 @@ describe('OrderFormComponent market hours', () => {
   const snackBar = { open: vi.fn() };
   const state: MarketHoursSnapshot = {
     serverNow: '2026-09-07T15:00:00-05:00', today: '2026-09-07',
-    opensAt: '2026-09-07T08:30:00-05:00', closesAt: '2026-09-07T15:00:00-05:00',
-    isOpen: false, nextOpenAt: '2026-09-08T08:30:00-05:00',
-    validForDate: '2026-09-08', nextTransitionAt: '2026-09-08T08:30:00-05:00', applyToAllMarkets: true,
+    opensAt: '2026-09-07T06:00:00-05:00', closesAt: '2026-09-07T15:00:00-05:00',
+    isOpen: false, nextOpenAt: '2026-09-08T06:00:00-05:00',
+    validForDate: '2026-09-08', nextTransitionAt: '2026-09-08T06:00:00-05:00', applyToAllMarkets: true,
   };
 
   beforeEach(async () => {
@@ -61,12 +61,23 @@ describe('OrderFormComponent market hours', () => {
     const emit = vi.spyOn(form.orderSubmitted, 'emit');
     form.submit();
     expect(emit).not.toHaveBeenCalled();
-    expect(fixture.nativeElement.querySelector('.schedule-blocker').textContent).toContain('08/09/2026, 08:30');
+    expect(fixture.nativeElement.querySelector('.schedule-blocker').textContent).toContain('08/09/2026, 06:00');
     expect(fixture.nativeElement.querySelector('.order-form').hasAttribute('inert')).toBe(true);
     current.set({ ...state, isOpen: true, today: '2026-09-08', validForDate: '2026-09-08' });
     fixture.detectChanges();
     expect(form.controlsDisabled).toBe(false);
     expect(form.instrumento).toBe('ABC');
+  });
+
+  it('renders Mercado as a dropdown for representatives', () => {
+    fixture.componentRef.setInput('portal', 'representatives');
+    fixture.componentRef.setInput('marketControl', 'select');
+    fixture.detectChanges();
+
+    const marketControl = fixture.nativeElement.querySelector('.channel-control');
+    expect(marketControl.textContent).toContain('Mercado');
+    expect(marketControl.querySelector('mat-select')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('.market-options')).toBeNull();
   });
 
   it('names the next session instead of tomorrow when the next day is not a trading day', () => {

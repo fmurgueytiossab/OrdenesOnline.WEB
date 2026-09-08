@@ -66,9 +66,9 @@
         </div>
       } @else {
         <div class="control-group channel-control">
-          <span class="control-label">Canal de ejecución</span>
+          <span class="control-label">{{ portal === 'representatives' ? 'Mercado' : 'Canal de ejecución' }}</span>
           <mat-form-field appearance="outline" class="form-field enhanced-select-field">
-            <mat-label>Selecciona un canal</mat-label>
+            <mat-label>{{ portal === 'representatives' ? 'Selecciona un mercado' : 'Selecciona un canal' }}</mat-label>
             <mat-select
               [(ngModel)]="mercado"
               [disabled]="submitting || controlsDisabled"
@@ -77,7 +77,7 @@
                 <span class="order-select-trigger">
                   <span class="order-select-symbol">{{ selectedMarket ? marketBadge(selectedMarket) : '—' }}</span>
                   <span class="order-select-copy">
-                    <strong>{{ selectedMarket?.name || 'Selecciona un canal' }}</strong>
+                    <strong>{{ selectedMarket?.name || (portal === 'representatives' ? 'Selecciona un mercado' : 'Selecciona un canal') }}</strong>
                     <small>{{ selectedMarket?.code || 'Sin selección' }}</small>
                   </span>
                 </span>
@@ -88,14 +88,18 @@
                     <span class="order-option-symbol">{{ marketBadge(option) }}</span>
                     <span class="order-option-copy">
                       <strong>{{ option.name }}</strong>
-                      <small>{{ option.code }} · Canal de ejecución</small>
+                      <small>{{ option.code }} · {{ portal === 'representatives' ? 'Mercado' : 'Canal de ejecución' }}</small>
                     </span>
                   </span>
                 </mat-option>
               }
             </mat-select>
           </mat-form-field>
-          <small class="field-help">Intermediario por el que se procesará la operación.</small>
+          <small class="field-help">
+            {{ portal === 'representatives'
+              ? 'Mercado donde se procesará la operación.'
+              : 'Intermediario por el que se procesará la operación.' }}
+          </small>
         </div>
       }
     </div>
