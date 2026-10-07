@@ -1,4 +1,4 @@
 export const environment = {
   production: true,
-  apiUrl: 'https://ordenestest.seminariosab.com.pe/api'
+  apiUrl: 'https://ordenesclitst.seminariosab.com.pe/api'
 };
