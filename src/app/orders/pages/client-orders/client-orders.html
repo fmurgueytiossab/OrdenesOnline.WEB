@@ -108,7 +108,7 @@
               @if (!client) {
                 Selecciona un cliente
               } @else {
-                El cliente no cuenta con un correo electrónico
+                Sin correo registrado
               }
             </div>
           }
@@ -120,14 +120,15 @@
             @if (!client) {
               Selecciona un cliente
             } @else if (client.phones.length === 0) {
-              El cliente no cuenta con número de celular
+              Sin celular registrado
             } @else {
               <button
                 type="button"
                 class="readonly-disclosure"
                 [matMenuTriggerFor]="phoneMenu"
                 [disabled]="submitting"
-                aria-label="Ver números de celular registrados">
+                aria-label="Ver números de celular registrados"
+                aria-describedby="recipient-help">
                 <span>{{ client.phones.length === 1 ? client.phones[0] : client.phones.length + ' números registrados' }}</span>
                 <span class="disclosure-arrow" aria-hidden="true">⌄</span>
               </button>
@@ -141,13 +142,6 @@
               </mat-menu>
             }
           </div>
-          @if (client && client.phones.length > 0) {
-            <small class="recipient-help">
-              {{ client.phones.length === 1
-                ? 'La orden se enviará a este número de celular.'
-                : 'La orden se enviará a estos números de celular.' }}
-            </small>
-          }
         </div>
 
         <div class="readonly-field code-field">
@@ -155,6 +149,14 @@
           <div class="value">{{ selectedClientCode || 'Selecciona un cliente' }}</div>
         </div>
       </div>
+      @if (client && client.phones.length > 0) {
+        <p id="recipient-help" class="recipient-help">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m21 3-7 18-4-7-7-4 18-7Z" /><path d="m10 14 11-11" /></svg>
+          <span>{{ client.phones.length === 1
+            ? 'La propuesta se enviará por WhatsApp al número de celular registrado.'
+            : 'La propuesta se enviará por WhatsApp a los números de celular registrados.' }}</span>
+        </p>
+      }
     </section>
 
     <div class="order-form-shell" [class.blocked]="orderFormDisabled">

@@ -121,7 +121,7 @@
 
 .identity-grid {
   display: grid;
-  grid-template-columns: 1.1fr 1.35fr 0.85fr 0.9fr;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1.3fr) minmax(0, 0.9fr) minmax(0, 0.7fr);
   gap: 0.75rem;
   align-items: start;
 }
@@ -132,6 +132,8 @@
 
 .client-search-field {
   width: 100%;
+  --mat-form-field-container-height: 4.5rem;
+  --mat-form-field-container-vertical-padding: 1.5rem;
 }
 
 .client-option {
@@ -235,7 +237,7 @@
 .readonly-field {
   min-width: 0;
   height: auto;
-  min-height: 4.35rem;
+  min-height: 4.5rem;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -337,9 +339,25 @@
 }
 
 .recipient-help {
-  margin-top: 0.2rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.45rem;
+  margin: 0.75rem 0 0;
   color: #667085;
-  font-size: 0.62rem;
+  font-size: 0.75rem;
+  line-height: 1.5;
+}
+
+.recipient-help svg {
+  flex: 0 0 1rem;
+  width: 1rem;
+  height: 1rem;
+  margin-top: 0.05rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .readonly-disclosure {
@@ -353,8 +371,10 @@
   text-align: left;
   background: transparent;
   border: 0;
+  font: inherit;
   font-size: 0.82rem;
   font-weight: 750;
+  line-height: 1.5;
   cursor: pointer;
 }
 

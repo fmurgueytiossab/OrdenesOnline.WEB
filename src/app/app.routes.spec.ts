@@ -17,7 +17,7 @@ describe('Portal entry routes', () => {
     });
     TestBed.overrideComponent(LoginComponent, {set: {template: '', imports: []}});
   });
-  for (const url of ['/Clientes', '/Clientes?source=direct', '/Representantes']) {
+  for (const url of ['/Clientes', '/clientes', '/CLIENTES', '/cLiEnTeS', '/Clientes?source=direct', '/clientes?source=direct', '/Representantes']) {
     it('preserves the intended login portal for ' + url, async () => {
       const harness = await RouterTestingHarness.create();
       const login = await harness.navigateByUrl(url, LoginComponent);

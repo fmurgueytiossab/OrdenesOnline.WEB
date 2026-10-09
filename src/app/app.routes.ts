@@ -1,4 +1,4 @@
-import { Routes } from '@angular/router';
+import { Routes, UrlMatcher } from '@angular/router';
 import { AuthGuard } from './Auth/auth.guard';
 import { ChangePasswordComponent } from './ChangePassword/ChangePassword';
 import { ForgotPasswordComponent } from './ForgotPassword/ForgotPassword';
@@ -9,6 +9,11 @@ import { ClientOrdersComponent } from './orders/pages/client-orders/client-order
 import { OrderTrackingComponent } from './orders/pages/order-tracking/order-tracking';
 import { ProposalReviewComponent } from './orders/pages/proposal-review/proposal-review';
 import { PruebaComponent } from './prueba/prueba';
+
+const clientLoginMatcher: UrlMatcher = (segments) =>
+  segments.length === 1 && segments[0].path.toLowerCase() === 'clientes'
+    ? { consumed: segments }
+    : null;
 
 export const routes: Routes = [
   { path: '', redirectTo: 'Representantes', pathMatch: 'full' },
@@ -45,10 +50,9 @@ export const routes: Routes = [
   },
 
   {
-    path: 'Clientes',
+    matcher: clientLoginMatcher,
     component: LoginComponent,
     data: { portal: 'clientes' },
-    pathMatch: 'full',
   },
   {
     path: 'Clientes/forgot-password',

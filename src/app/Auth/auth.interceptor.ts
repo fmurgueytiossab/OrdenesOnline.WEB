@@ -18,7 +18,7 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
     catchError(err => {
       if (err.status === 401) {
         localStorage.removeItem('token');
-        const loginUrl = router.url.startsWith('/Clientes')
+        const loginUrl = router.url.toLowerCase().startsWith('/clientes')
           ? PORTAL_ROUTES.clientes.login
           : PORTAL_ROUTES.representantes.login;
         router.navigateByUrl(loginUrl);
