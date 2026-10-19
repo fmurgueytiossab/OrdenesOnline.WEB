@@ -119,9 +119,32 @@
 .panel-heading h2 { margin: 0 0 0.2rem; color: #182230; font-size: 0.95rem; }
 .panel-heading p { margin: 0; color: #667085; font-size: 0.76rem; }
 
+.contact-channel {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-shrink: 0;
+  padding: 0.4rem 0.65rem;
+  color: #067647;
+  background: #ecfdf3;
+  border: 1px solid #abefc6;
+  border-radius: 2rem;
+  font-size: 0.72rem;
+  font-weight: 650;
+}
+
+.contact-channel svg {
+  width: 1rem;
+  height: 1rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linejoin: round;
+}
+
 .identity-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1.3fr) minmax(0, 0.9fr) minmax(0, 0.7fr);
+  grid-template-columns: minmax(0, 1.8fr) minmax(0, 1fr) minmax(0, 0.7fr);
   gap: 0.75rem;
   align-items: start;
 }
@@ -321,19 +344,18 @@
   stroke-width: 1.8;
 }
 
-.readonly-field label,
-.secondary-label {
+.field-label {
   display: block;
   margin-bottom: 0.28rem;
   color: #667085;
-  font-size: 0.68rem;
+  font-size: 0.72rem;
   font-weight: 650;
 }
 
 .readonly-field .value {
   min-width: 0;
   color: #344054;
-  font-size: 0.82rem;
+  font-size: 0.9rem;
   font-weight: 750;
   overflow-wrap: anywhere;
 }
@@ -372,7 +394,7 @@
   background: transparent;
   border: 0;
   font: inherit;
-  font-size: 0.82rem;
+  font-size: 0.9rem;
   font-weight: 750;
   line-height: 1.5;
   cursor: pointer;
@@ -388,38 +410,50 @@
 .disclosure-arrow {
   flex: 0 0 auto;
   color: #667085;
-  font-size: 1rem;
+  width: 1.1rem;
+  height: 1.1rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
-:host ::ng-deep .readonly-contact-menu.mat-mdc-menu-panel {
-  min-width: 17rem;
-  max-width: min(24rem, calc(100vw - 2rem));
-  border-radius: 0.75rem;
-}
+.readonly-disclosure:hover { color: #175cd3; }
+.readonly-disclosure:focus-visible { outline: 2px solid #2563eb; outline-offset: 4px; border-radius: 0.2rem; }
+.readonly-disclosure:disabled { opacity: 0.6; cursor: not-allowed; }
+.code-field .value { font-variant-numeric: tabular-nums; letter-spacing: 0.04em; }
 
-:host ::ng-deep .contact-menu-content {
+.submission-error {
   display: flex;
-  flex-direction: column;
-  gap: 0.55rem;
+  align-items: flex-start;
+  gap: 0.65rem;
+  margin-top: 0.9rem;
   padding: 0.85rem 1rem;
-  color: #344054;
+  color: #912018;
+  background: #fff7f6;
+  border: 1px solid #fecdca;
+  border-radius: 0.7rem;
+  font-size: 0.8rem;
+  line-height: 1.5;
 }
 
-:host ::ng-deep .contact-menu-content strong {
-  color: #667085;
-  font-size: 0.68rem;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+.submission-error svg {
+  flex: 0 0 1.2rem;
+  width: 1.2rem;
+  height: 1.2rem;
+  margin-top: 0.1rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
 }
 
-:host ::ng-deep .contact-menu-content span {
-  overflow-wrap: anywhere;
-  font-size: 0.82rem;
-  font-weight: 700;
-}
+.submission-error p { margin: 0.2rem 0 0; overflow-wrap: anywhere; }
 
 @media (max-width: 64rem) {
   .identity-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .client-search-control { grid-column: 1 / -1; }
 }
 
 @media (max-width: 48rem) {
@@ -428,6 +462,7 @@
 }
 
 @media (max-width: 34rem) {
+  .panel-heading { align-items: flex-start; flex-direction: column; gap: 0.7rem; }
   .title-icon { width: 2.55rem; height: 2.55rem; }
   .client-panel { padding: 1rem; }
 }

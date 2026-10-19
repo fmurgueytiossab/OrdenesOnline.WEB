@@ -29,7 +29,6 @@ import { MarketHoursService } from '../../services/market-hours.service';
 
 interface ClientIdentity {
   name: string;
-  emails: string[];
   phones: string[];
   bloqueoMotivo: string;
 }
@@ -66,9 +65,9 @@ export class ClientOrdersComponent {
   private readonly clientSearchTerms = new Subject<string>();
 
   client: ClientIdentity | null = null;
-  recipientEmail = '';
   selectedClientCode = '';
   orderBlockMessage = '';
+  submissionError = '';
 
   readonly markets: MarketOption[] = [
     { code: '01', name: 'BVL' },
@@ -156,13 +155,7 @@ export class ClientOrdersComponent {
       return;
     }
 
-    if (!this.recipientEmail) {
-      this.showMessage('El cliente no cuenta con un correo electrónico', true, 6000);
-      return;
-    }
-
     const propuesta: PropuestaCliente = {
-      correoCliente: this.recipientEmail,
       cosabcli: this.selectedClientCode,
       tipo: order.tipo,
       tipoOrden: order.tipoOrden,
@@ -175,6 +168,7 @@ export class ClientOrdersComponent {
       vigencia: order.vigencia,
     };
 
+    this.submissionError = '';
     this.submitting = true;
     this.propuestaClienteService
       .registrar(propuesta)
@@ -192,7 +186,8 @@ export class ClientOrdersComponent {
         },
         error: (error) => {
           if (error.status === 409) this.marketHours.refresh();
-          this.showMessage(error.error?.title || 'No se pudo registrar la orden. Inténtalo de nuevo.', true);
+          this.submissionError = error.error?.detail || error.error?.title ||
+            'No se pudo registrar la orden. Inténtalo de nuevo.';
         },
       });
   }
@@ -226,12 +221,11 @@ export class ClientOrdersComponent {
 
     this.client = {
       name: result.nombreCompleto,
-      emails: result.emails,
       phones,
       bloqueoMotivo,
     };
     this.clientSearch = result;
-    this.recipientEmail = result.emails[0] ?? '';
+    this.submissionError = '';
     this.selectedClientCode = result.cosabcli;
     this.clientResults = [];
     this.hasSearchedClients = false;
@@ -253,7 +247,7 @@ export class ClientOrdersComponent {
 
   private clearSelectedClient(): void {
     this.client = null;
-    this.recipientEmail = '';
+    this.submissionError = '';
     this.selectedClientCode = '';
   }
 

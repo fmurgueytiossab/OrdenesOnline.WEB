@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, DestroyRef, OnInit, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, DestroyRef, OnInit, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -9,6 +9,7 @@ import { finalize, timer } from 'rxjs';
 
 import {
   CLIENT_ORDER_STATUS_LABELS,
+  CLIENT_ORDER_STATUS_PRIORITY,
   ClientOrder,
   ClientOrderStatus,
   EXECUTION_CHANNELS,
@@ -34,11 +35,13 @@ type SideFilter = ClientOrder['side'] | 'ALL';
 })
 export class OrderTrackingComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
+  private readonly cdr = inject(ChangeDetectorRef);
   private readonly refreshIntervalMs = 30_000;
 
   readonly channels = EXECUTION_CHANNELS;
   readonly statusLabels = CLIENT_ORDER_STATUS_LABELS;
-  readonly pageSize = 5;
+  readonly statuses = Object.entries(CLIENT_ORDER_STATUS_LABELS);
+  readonly pageSize = 10;
 
   selectedChannel: ChannelFilter = 'ALL';
   selectedStatus: StatusFilter = 'ALL';
@@ -49,6 +52,9 @@ export class OrderTrackingComponent implements OnInit {
 
   loading = false;
   loadError = '';
+  actionError = '';
+  actionSuccess = '';
+  updatingOrderId: number | null = null;
   lastUpdatedAt: Date | null = null;
   selectedOrder: ClientOrder | null = null;
 
@@ -81,7 +87,10 @@ export class OrderTrackingComponent implements OnInit {
       ) return false;
       if (instrument && !order.instrument.toLowerCase().includes(instrument)) return false;
       return true;
-    });
+    }).sort((left, right) =>
+      CLIENT_ORDER_STATUS_PRIORITY[left.status] - CLIENT_ORDER_STATUS_PRIORITY[right.status]
+      || this.proposalTimestamp(right).localeCompare(this.proposalTimestamp(left))
+      || right.id - left.id);
   }
 
   get visibleOrders(): ClientOrder[] {
@@ -107,17 +116,23 @@ export class OrderTrackingComponent implements OnInit {
   }
 
   refreshOrders(): void {
-    if (this.loading) return;
+    if (this.loading || this.updatingOrderId !== null) return;
 
     this.loading = true;
     this.loadError = '';
     this.trackingService.loadOrders()
-      .pipe(finalize(() => (this.loading = false)))
+      .pipe(takeUntilDestroyed(this.destroyRef), finalize(() => {
+        this.loading = false;
+        this.cdr.markForCheck();
+      }))
       .subscribe({
         next: () => {
           const updatedAt = this.trackingService.lastUpdatedAt();
           this.lastUpdatedAt = updatedAt ? new Date(updatedAt) : new Date();
           if (this.currentPage > this.totalPages) this.currentPage = this.totalPages;
+          if (this.selectedOrder) {
+            this.selectedOrder = this.trackingService.orders().find(order => order.id === this.selectedOrder!.id) ?? null;
+          }
         },
         error: () => {
           this.loadError = 'No se pudieron cargar las órdenes.';
@@ -129,6 +144,37 @@ export class OrderTrackingComponent implements OnInit {
     this.selectedChannel = channel;
     this.currentPage = 1;
     this.updateUrl();
+  }
+
+  markEntered(order: ClientOrder): void {
+    if (order.status !== 'FIRMADO' || !order.canMarkEntered || this.loading || this.updatingOrderId !== null) return;
+    this.updatingOrderId = order.id;
+    this.actionError = '';
+    this.actionSuccess = '';
+    this.trackingService.markEntered(order.id)
+      .pipe(takeUntilDestroyed(this.destroyRef), finalize(() => {
+        this.updatingOrderId = null;
+        this.cdr.markForCheck();
+      }))
+      .subscribe({
+        next: () => {
+          this.actionSuccess = `La orden #${order.id} fue marcada como ingresada.`;
+          if (this.selectedOrder?.id === order.id) {
+            this.selectedOrder = { ...this.selectedOrder, status: 'INGRESADO', canMarkEntered: false };
+          }
+          if (this.currentPage > this.totalPages) this.currentPage = this.totalPages;
+        },
+        error: (error) => {
+          this.actionError = error.error?.detail || error.error?.title || 'No se pudo marcar la orden como ingresada. Inténtalo nuevamente.';
+          if (error.status === 409) this.refreshAfterConflict();
+        },
+      });
+  }
+
+  private refreshAfterConflict(): void {
+    // El servidor puede haber cambiado desde la última consulta.
+    this.updatingOrderId = null;
+    this.refreshOrders();
   }
 
   applyFilters(): void {

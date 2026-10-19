@@ -1,6 +1,7 @@
 export type ExecutionChannel = 'BVL' | 'CANACCORD' | 'EUROCLEAR';
 
-export type ClientOrderStatus = 'PENDIENTE';
+export type ClientOrderStatus =
+  | 'PENDIENTE' | 'ENVIADO' | 'FIRMADO' | 'INGRESADO' | 'CANCELADO' | 'DESCONOCIDO';
 
 export interface ClientOrder {
   id: number;
@@ -17,6 +18,7 @@ export interface ClientOrder {
   pendingQuantity: number;
   price: number | null;
   status: ClientOrderStatus;
+  canMarkEntered?: boolean;
 }
 
 export interface TrackingItemResponse {
@@ -34,6 +36,12 @@ export interface TrackingItemResponse {
   precio: number | null;
   estado: string;
   mercado: string;
+  puedeMarcarIngresado?: boolean;
+}
+
+export interface MarkOrderEnteredResponse {
+  propuestaId: number;
+  estado: 'INGRESADO';
 }
 
 export interface TrackingPageResponse {
@@ -55,4 +63,18 @@ export const EXECUTION_CHANNELS: ReadonlyArray<{
 
 export const CLIENT_ORDER_STATUS_LABELS: Record<ClientOrderStatus, string> = {
   PENDIENTE: 'Pendiente',
+  ENVIADO: 'Enviado',
+  FIRMADO: 'Firmado',
+  INGRESADO: 'Ingresado',
+  CANCELADO: 'Cancelado',
+  DESCONOCIDO: 'Sin información',
+};
+
+export const CLIENT_ORDER_STATUS_PRIORITY: Record<ClientOrderStatus, number> = {
+  ENVIADO: 0,
+  FIRMADO: 1,
+  CANCELADO: 2,
+  PENDIENTE: 3,
+  DESCONOCIDO: 3,
+  INGRESADO: 4,
 };

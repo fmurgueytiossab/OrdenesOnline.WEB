@@ -4,7 +4,10 @@ import { EMPTY, Observable, expand, map, reduce, tap } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
 import {
+  CLIENT_ORDER_STATUS_LABELS,
   ClientOrder,
+  ClientOrderStatus,
+  MarkOrderEnteredResponse,
   TrackingItemResponse,
   TrackingPageResponse,
 } from '../models/client-order';
@@ -55,6 +58,16 @@ export class ClientOrderTrackingService {
     );
   }
 
+  markEntered(id: number): Observable<MarkOrderEnteredResponse> {
+    return this.http.post<MarkOrderEnteredResponse>(
+      `${this.apiUrl}/PropuestaCliente/${id}/ingresado`, {},
+    ).pipe(tap(() => {
+      this.orderState.update(orders => orders.map(order => order.id === id
+        ? { ...order, status: 'INGRESADO', canMarkEntered: false }
+        : order));
+    }));
+  }
+
   private getTrackingPage(page: number): Observable<TrackingPageResponse> {
     const params = new HttpParams()
       .set('page', page.toString())
@@ -69,6 +82,8 @@ export class ClientOrderTrackingService {
   private mapOrder(item: TrackingItemResponse): ClientOrder {
     const normalizedSide = item.tipo.trim().toUpperCase();
     const normalizedChannel = item.mercado.trim().toUpperCase();
+    const apiStatus = item.estado?.trim().toUpperCase() ?? '';
+    const status = apiStatus === 'ACEPTADO' ? 'PENDIENTE' : apiStatus;
 
     return {
       id: item.codigoOrden,
@@ -84,7 +99,9 @@ export class ClientOrderTrackingService {
       cancelledQuantity: item.cantidadAnulada,
       pendingQuantity: item.cantidadPendiente,
       price: item.precio,
-      status: 'PENDIENTE',
+      status: Object.hasOwn(CLIENT_ORDER_STATUS_LABELS, status)
+        ? status as ClientOrderStatus : 'DESCONOCIDO',
+      canMarkEntered: status === 'FIRMADO' && item.puedeMarcarIngresado === true,
     };
   }
 }

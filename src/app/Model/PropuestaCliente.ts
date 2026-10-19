@@ -1,5 +1,5 @@
 export interface PropuestaCliente {
-  correoCliente: string;
+  correoCliente?: string;
   cosabcli: string;
   tipo: string;
   tipoOrden: string;

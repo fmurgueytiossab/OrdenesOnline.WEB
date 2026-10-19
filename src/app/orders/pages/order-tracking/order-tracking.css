@@ -393,6 +393,24 @@ td small {
 .channel-pill { color: #344054; background: #f2f4f7; }
 
 .status[data-status="PENDIENTE"] { color: #b54708; background: #fffaeb; }
+.status[data-status="ENVIADO"] { color: #175cd3; background: #eff8ff; }
+.status[data-status="FIRMADO"] { color: #6941c6; background: #f4f3ff; }
+.status[data-status="INGRESADO"] { color: #027a48; background: #ecfdf3; }
+.status[data-status="CANCELADO"] { color: #b42318; background: #fef3f2; }
+.status[data-status="DESCONOCIDO"] { color: #475467; background: #f2f4f7; }
+.success-notice { color: #027a48; background: #ecfdf3; border-color: #abefc6; }
+.enter-button {
+  padding: 0.45rem 0.65rem;
+  color: var(--blue-dark);
+  background: var(--blue-soft);
+  border: 1px solid #c7d7fe;
+  border-radius: 0.5rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.enter-button:hover { background: #dbe7ff; }
+.enter-button:disabled { opacity: 0.55; cursor: not-allowed; }
+.no-action { color: #98a2b3; }
 
 .side-indicator {
   display: inline-block;

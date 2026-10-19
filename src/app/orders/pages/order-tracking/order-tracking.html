@@ -6,7 +6,7 @@
         <h1 id="tracking-title">Seguimiento de órdenes</h1>
         <p>Consulta las propuestas de hoy y su detalle por política.</p>
       </div>
-      <button class="secondary-button" type="button" [disabled]="loading" (click)="refreshOrders()">
+      <button class="secondary-button" type="button" [disabled]="loading || updatingOrderId !== null" (click)="refreshOrders()">
         {{ loading ? 'Actualizando…' : 'Actualizar' }}
       </button>
     </header>
@@ -17,6 +17,13 @@
         <span>{{ loadError }}</span>
         <button type="button" (click)="refreshOrders()">Reintentar</button>
       </div>
+    }
+
+    @if (actionError) {
+      <div class="demo-notice error-notice" role="alert">{{ actionError }}</div>
+    }
+    @if (actionSuccess) {
+      <div class="demo-notice success-notice" role="status">{{ actionSuccess }}</div>
     }
 
     <div class="channel-tabs" role="tablist" aria-label="Canal de ejecución">
@@ -64,7 +71,9 @@
               aria-labelledby="status-filter-label"
               panelClass="tracking-select-panel">
               <mat-option value="ALL">Todos</mat-option>
-              <mat-option value="PENDIENTE">Pendiente</mat-option>
+              @for (status of statuses; track status[0]) {
+                <mat-option [value]="status[0]">{{ status[1] }}</mat-option>
+              }
             </mat-select>
           </mat-form-field>
         </div>
@@ -129,6 +138,7 @@
                 <th scope="col" class="numeric">Cantidad</th>
                 <th scope="col" class="numeric">Precio</th>
                 <th scope="col">Estado</th>
+                <th scope="col">Acción</th>
               </tr>
             </thead>
             <tbody>
@@ -153,6 +163,20 @@
                   <td data-label="Precio" class="numeric">{{ formatPrice(order.price) }}</td>
                   <td data-label="Estado">
                     <span class="status" [attr.data-status]="order.status">{{ statusLabel(order.status) }}</span>
+                  </td>
+                  <td data-label="Acción">
+                    @if (order.status === 'FIRMADO' && order.canMarkEntered) {
+                      <button class="enter-button" type="button"
+                        [disabled]="loading || updatingOrderId !== null"
+                        [attr.aria-label]="'Marcar orden ' + order.id + ' como ingresada'"
+                        (click)="markEntered(order)">
+                        {{ updatingOrderId === order.id ? 'Guardando…' : 'Marcar ingresado' }}
+                      </button>
+                    } @else if (order.status === 'CANCELADO') {
+                      <span class="no-action">Proceso finalizado</span>
+                    } @else {
+                      <span class="no-action" aria-label="Sin acciones disponibles">—</span>
+                    }
                   </td>
                 </tr>
               }
