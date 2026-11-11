@@ -1,0 +1,63 @@
+<div class="admin-page">
+  <header><div><span>Administración</span><h1>Representantes y carteras</h1><p>Configura accesos, responsables y ausencias. Los cambios quedan auditados.</p></div><button type="button" (click)="reload()" [disabled]="busy">Actualizar</button></header>
+  @if (!enabled) { <p class="notice">El nuevo alcance está pendiente de activación. Puedes preparar y revisar su configuración.</p> }
+  @if (error) { <p class="error" role="alert">{{ error }}</p> }
+  @if (message) { <p role="status">{{ message }}</p> }
+  <nav aria-label="Configuración de representantes">@for (t of tabs; track t) {<button type="button" [class.selected]="tab === t" (click)="tab = t">{{ t }}</button>}</nav>
+  @if (config; as c) {
+    <section [attr.aria-busy]="busy">
+    @switch (tab) {
+      @case ('gestores') {
+        <h2>Asignación de gestores</h2><p>Un representante puede tener varios códigos. Las cuentas de CodeRepresentante se conservan.</p>
+        <form (ngSubmit)="save({tipo: 'gestor', representanteId: person, codigoGestor: gestor, activo: active})">
+          <label>Representante<select name="persona" [(ngModel)]="person" required><option [ngValue]="0" disabled>Seleccionar</option>@for (u of c.usuarios; track u.representanteId) {<option [ngValue]="u.representanteId">{{u.nombre}}</option>}</select></label>
+          <label>Gestor OPERSAB<select name="gestor" [(ngModel)]="gestor" required><option value="" disabled>Seleccionar</option>@for (g of catalogo; track g.codigo) {<option [value]="g.codigo">{{g.codigo}} · {{g.nombre}}</option>}</select></label>
+          <label class="check"><input type="checkbox" name="activo" [(ngModel)]="active">Asignación activa</label><button [disabled]="busy || !person || !gestor">Guardar asignación</button>
+        </form>
+        <table><thead><tr><th>Representante</th><th>Gestor</th><th>Estado</th><th>Acción</th></tr></thead><tbody>@for (g of c.gestores; track g.representanteId + ':' + g.codigoGestor) {<tr><td>{{name(g.representanteId)}}</td><td>{{g.codigoGestor}}</td><td>{{g.activo ? 'Activo' : 'Inactivo'}}</td><td><button type="button" [disabled]="busy" (click)="save({tipo: 'gestor', representanteId: g.representanteId, codigoGestor: g.codigoGestor, activo: !g.activo})">{{g.activo ? 'Desactivar' : 'Activar'}}</button></td></tr>}</tbody></table>
+      }
+      @case ('grupos') {
+        <h2>Grupos y subgrupos</h2><p>La consulta global se concede a los integrantes directos del grupo. Incluye clientes activos sin gestor. La consulta global no amplía las carteras para operar.</p><form (ngSubmit)="saveGroup()">
+          <label>Nombre<input name="nombre" [(ngModel)]="grupo.nombre" required maxlength="100"></label>
+          <label>Grupo padre<select name="padre" [(ngModel)]="grupo.grupoPadreId"><option [ngValue]="null">Sin padre</option>@for (g of c.grupos; track g.grupoId) { @if (g.grupoId !== grupo.id) {<option [ngValue]="g.grupoId">{{g.nombre}}</option>} }</select></label>
+          <label class="check"><input name="global" type="checkbox" [(ngModel)]="grupo.puedeConsultarTodosClientes">Consultar todos los clientes</label><label class="check"><input name="activo" type="checkbox" [(ngModel)]="grupo.activo">Activo</label><button [disabled]="busy">Guardar grupo</button><button type="button" (click)="grupo = {id: 0, nombre: '', grupoPadreId: null, activo: true, puedeConsultarTodosClientes: false}">Nuevo</button>
+        </form><table><thead><tr><th>Grupo</th><th>Padre</th><th>Estado</th><th></th></tr></thead><tbody>@for (g of c.grupos; track g.grupoId) {<tr><td>{{g.nombre}}</td><td>{{groupName(g.grupoPadreId)}}</td><td>{{g.activo ? 'Activo' : 'Inactivo'}}</td><td><button type="button" (click)="editGroup(g)">Editar</button></td></tr>}</tbody></table>
+      }
+      @case ('miembros') {
+        <h2>Integrantes y alcance</h2><p>Los miembros activos de grupos ordinarios pueden crear propuestas y marcar Ingresado en las carteras compartidas. Los subgrupos se incluyen solo cuando lo indiques. Master agrega consulta global.</p>
+        <form (ngSubmit)="saveMember()">
+          <label>Grupo<select name="grupo" [(ngModel)]="miembro.id" required>@for (g of c.grupos; track g.grupoId) {<option [ngValue]="g.grupoId">{{g.nombre}}</option>}</select></label>
+          <label>Representante<select name="representante" [(ngModel)]="miembro.representanteId" required>@for (u of c.usuarios; track u.representanteId) {<option [ngValue]="u.representanteId">{{u.nombre}}</option>}</select></label>
+          <label class="check"><input name="desc" type="checkbox" [(ngModel)]="miembro.incluyeDescendientes">Consultar también subgrupos</label>
+          <label class="check"><input name="activo" type="checkbox" [(ngModel)]="miembro.activo">Membresía activa</label><button [disabled]="busy || !miembro.id || !miembro.representanteId">Guardar integrante</button>
+        </form><table><thead><tr><th>Grupo</th><th>Integrante</th><th>Subgrupos</th><th></th></tr></thead><tbody>@for (m of c.miembros; track m.grupoId + ':' + m.representanteId) {<tr><td>{{groupName(m.grupoId)}}</td><td>{{name(m.representanteId)}} {{m.activo ? '' : '(inactivo)'}}</td><td>{{m.incluyeDescendientes ? 'Sí' : 'No'}}</td><td><button type="button" (click)="editMember(m)">Editar</button></td></tr>}</tbody></table>
+      }
+      @case ('reglas') {
+        <h2>Responsables por renta y acción</h2><form (ngSubmit)="saveRule()">
+          <label>Titular<select name="titular" [(ngModel)]="regla.representanteId" required>@for (u of c.usuarios; track u.representanteId) {<option [ngValue]="u.representanteId">{{u.nombre}}</option>}</select></label>
+          <label>Renta<select name="renta" [(ngModel)]="regla.tipoRenta"><option>RV</option><option>RF</option></select></label>
+          <label>Acción<select name="accion" [(ngModel)]="regla.accion"><option value="ENVIO_ORDEN">Envío de orden</option><option value="ENVIO_OPERACION">Ejecución</option></select></label>
+          <label>Resolución<select name="modo" [(ngModel)]="regla.modoResolucion"><option value="TITULAR">El titular (=)</option><option value="LISTA">Lista de alternativas</option></select></label>
+          @if (regla.modoResolucion === 'LISTA') {<label>Alternativas<select name="opciones" multiple [(ngModel)]="regla.opciones">@for (u of c.usuarios; track u.representanteId) { @if (u.activo) {<option [ngValue]="u.representanteId">{{u.nombre}}</option>} }</select></label>}
+          <label class="check"><input name="activo" type="checkbox" [(ngModel)]="regla.activo">Regla activa</label><button [disabled]="busy || !regla.representanteId">Guardar nueva versión</button>
+        </form><table><thead><tr><th>Titular</th><th>Renta</th><th>Acción</th><th>Resolución</th><th></th></tr></thead><tbody>@for (r of c.reglas; track r.reglaId) { @if (r.activo) {<tr><td>{{name(r.titularRepresentanteId)}}</td><td>{{r.tipoRenta}}</td><td>{{r.accion === 'ENVIO_ORDEN' ? 'Orden' : 'Ejecución'}}</td><td>{{r.modoResolucion === 'TITULAR' ? 'El titular' : 'Alternativas'}}</td><td><button type="button" (click)="editRule(r)">Editar</button></td></tr>} }</tbody></table>
+      }
+      @case ('perfiles') {
+        <h2>Perfiles de renta</h2><p>Las opciones permitidas proceden de las cuatro reglas de envío para RV y RF.</p><p>Asesor y operador son datos descriptivos. La disponibilidad depende de la cuenta activa y las ausencias registradas.</p>
+        <form (ngSubmit)="saveProfile()"><label>Representante<select name="persona" [(ngModel)]="perfil.representanteId">@for (u of c.usuarios; track u.representanteId) {<option [ngValue]="u.representanteId">{{u.nombre}}</option>}</select></label><label>Renta<select name="renta" [(ngModel)]="perfil.tipoRenta"><option>RV</option><option>RF</option></select></label><label class="check"><input name="asesor" type="checkbox" [(ngModel)]="perfil.esAsesor">Asesor</label><label class="check"><input name="operador" type="checkbox" [(ngModel)]="perfil.esOperador">Operador</label><button [disabled]="busy || !perfil.representanteId">Guardar perfil</button></form>
+        <table><thead><tr><th>Representante</th><th>Renta</th><th>Asesor / operador</th></tr></thead><tbody>@for (p of c.perfiles; track p.representanteId + ':' + p.tipoRenta) {<tr><td>{{name(p.representanteId)}}</td><td>{{p.tipoRenta}}</td><td>{{p.esAsesor ? 'Sí' : 'No'}} / {{p.esOperador ? 'Sí' : 'No'}}</td></tr>}</tbody></table>
+      }
+      @case ('ausencias') {
+        <h2>Ausencias</h2><p>Fechas en hora de Lima. Para corregir un intervalo, cancela el registro y agrega el correcto.</p>
+        <form (ngSubmit)="saveAbsence()"><label>Representante<select name="persona" [(ngModel)]="ausencia.representanteId">@for (u of c.usuarios; track u.representanteId) {<option [ngValue]="u.representanteId">{{u.nombre}}</option>}</select></label><label>Motivo<select name="motivo" [(ngModel)]="ausencia.motivoAusenciaId">@for (m of c.motivos; track m.motivoAusenciaId) { @if (m.activo) {<option [ngValue]="m.motivoAusenciaId">{{m.nombre}}</option>} }</select></label><label>Desde<input type="datetime-local" name="desde" [(ngModel)]="ausencia.desde" required></label><label>Hasta<input type="datetime-local" name="hasta" [(ngModel)]="ausencia.hasta" required></label><button [disabled]="busy || !ausencia.representanteId || !ausencia.motivoAusenciaId">Registrar ausencia</button></form>
+        <table><thead><tr><th>Representante</th><th>Desde</th><th>Hasta</th><th>Estado</th><th></th></tr></thead><tbody>@for (a of c.ausencias; track a.ausenciaId) {<tr><td>{{name(a.representanteId)}}</td><td>{{utc(a.desdeUtc) | date:'dd/MM/yyyy HH:mm':'-0500'}}</td><td>{{utc(a.hastaUtc) | date:'dd/MM/yyyy HH:mm':'-0500'}}</td><td>{{a.cancelada ? 'Cancelada' : 'Registrada'}}</td><td>@if (!a.cancelada) {<button type="button" [disabled]="busy" (click)="save({tipo: 'ausencia', id: a.ausenciaId, representanteId: a.representanteId})">Cancelar ausencia</button>}</td></tr>}</tbody></table>
+      }
+      @case ('usuarios') {
+        <h2>Habilitación de cuentas</h2><p>Las cuentas activas pueden crear propuestas y marcar Ingresado dentro de sus carteras autorizadas. Master agrega consulta global. EsAdmin habilita la administración de esta configuración.</p>
+        <table><thead><tr><th>Representante</th><th>Activo</th><th></th></tr></thead><tbody>@for (u of c.usuarios; track u.representanteId) {<tr><td>{{u.nombre}}</td><td><input type="checkbox" [(ngModel)]="u.activo" [attr.aria-label]="'Cuenta activa de ' + u.nombre"></td><td><button type="button" [disabled]="busy" (click)="save({tipo: 'usuario', representanteId: u.representanteId, activo: u.activo})">Guardar</button></td></tr>}</tbody></table>
+      }
+      @case ('auditoría') {<h2>Últimos cambios</h2><p>Actualiza para consultar los cambios recientes.</p><table><thead><tr><th>Fecha UTC</th><th>Usuario</th><th>Configuración</th><th>Referencia</th></tr></thead><tbody>@for (a of auditoria; track a.auditoriaId) {<tr><td>{{a.fechaUtc}}</td><td>{{name(a.actorRepresentanteId)}}</td><td>{{a.entidad}}</td><td>{{a.clave}}</td></tr>}</tbody></table>}
+    }
+    </section>
+  }
+</div>

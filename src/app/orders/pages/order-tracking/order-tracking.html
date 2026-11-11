@@ -220,6 +220,10 @@
       <div class="detail-grid">
         <div><span>Código de orden</span><strong>#{{ selectedOrder.id }}</strong></div>
         <div><span>Código de cliente</span><strong>{{ selectedOrder.clientCode }}</strong></div>
+        <div><span>Responsable de orden</span><strong>{{ selectedOrder.orderResponsible || 'No informado' }}</strong></div>
+        <div><span>Responsable de ejecución</span><strong>{{ selectedOrder.operationResponsible || 'No informado' }}</strong></div>
+        <div><span>Modalidad referencial</span><strong>{{ selectedOrder.referenceMode || 'No informada' }}</strong></div>
+        <div><span>Renta</span><strong>{{ selectedOrder.renta || 'No informada' }}</strong></div>
         <div><span>Estado</span><strong class="status" [attr.data-status]="selectedOrder.status">{{ statusLabel(selectedOrder.status) }}</strong></div>
         <div><span>Canal de ejecución</span><strong>{{ formatChannel(selectedOrder.channel) }}</strong></div>
         <div>

@@ -22,6 +22,7 @@ import { ClienteSearchResult } from '../../../Model/ClienteSearchResult';
 import { PropuestaCliente } from '../../../Model/PropuestaCliente';
 import { ClienteService } from '../../../services/ClienteService';
 import { PropuestaClienteService } from '../../../services/PropuestaClienteService';
+import { RepresentantesConfiguracionService, Responsables, Titular } from '../../../services/representantes-configuracion.service';
 import { OrderFormComponent } from '../../components/order-form/order-form';
 import { MarketOption, OrderFormValue } from '../../models/order-form-value';
 import { ClientOrderTrackingService } from '../../services/client-order-tracking.service';
@@ -62,6 +63,18 @@ export class ClientOrdersComponent {
   clientResults: ClienteSearchResult[] = [];
   readonly sourceOrderId: string | null;
   readonly initialOrder: Partial<OrderFormValue> | null;
+  configurationLoaded = false;
+  configurationEnabled = false;
+  responsibleLoading = false;
+  responsibleError = '';
+  responsibleOptions: Responsables | null = null;
+  titularId = 0;
+  orderResponsibleId = 0;
+  operationResponsibleId = 0;
+  modalidadReferencia = '';
+  private currentInstrument = '';
+  private readonly responsibleRequests = new Subject<void>();
+  get selectedTitular(): Titular | undefined { return this.responsibleOptions?.titulares.find(t => t.representanteId === this.titularId); }
   private readonly clientSearchTerms = new Subject<string>();
 
   client: ClientIdentity | null = null;
@@ -87,7 +100,23 @@ export class ClientOrdersComponent {
     private readonly clienteService: ClienteService,
     destroyRef: DestroyRef,
     trackingService: ClientOrderTrackingService,
+    private readonly configurationApi: RepresentantesConfiguracionService,
   ) {
+    this.responsibleRequests.pipe(switchMap(() => {
+      this.responsibleOptions = null; this.titularId = 0; this.orderResponsibleId = 0; this.operationResponsibleId = 0;
+      this.responsibleError = ''; this.responsibleLoading = false;
+      if (!this.configurationEnabled || !this.selectedClientCode || !this.currentInstrument) return of(null);
+      this.responsibleLoading = true;
+      return this.configurationApi.responsables(this.selectedClientCode, this.currentInstrument).pipe(
+        catchError(error => {this.responsibleError = error.error?.title ?? 'No se pudieron resolver los responsables.'; return of(null);}));
+    }), takeUntilDestroyed(destroyRef)).subscribe(options => {
+      this.responsibleLoading = false; this.responsibleOptions = options;
+      if (options?.titulares.length === 1) {this.titularId = options.titulares[0].representanteId; this.selectTitular();}
+      this.cdr.markForCheck();
+    });
+    this.configurationApi.sesion().pipe(takeUntilDestroyed(destroyRef)).subscribe({next: session => {
+      this.configurationEnabled = session.enabled; this.configurationLoaded = true; this.responsibleRequests.next(); this.cdr.markForCheck();
+    }, error: () => {this.responsibleError = 'No se pudo comprobar la configuración. Recarga la página antes de enviar.'; this.cdr.markForCheck();}});
     this.sourceOrderId = this.router.parseUrl(this.router.url).queryParams['sourceOrderId'] ?? null;
     const sourceOrder = this.sourceOrderId ? trackingService.getById(this.sourceOrderId) : undefined;
     this.initialOrder = sourceOrder
@@ -140,6 +169,7 @@ export class ClientOrdersComponent {
   }
 
   submitOrder(order: OrderFormValue): void {
+    if (!this.configurationLoaded) {this.submissionError = 'Espera a que se compruebe la configuración de responsables.'; return;}
     if (!this.client || !this.selectedClientCode) {
       this.showMessage('Debe buscar y seleccionar un cliente', true);
       return;
@@ -167,6 +197,16 @@ export class ClientOrdersComponent {
       moneda: order.moneda.toLocaleLowerCase('es-PE'),
       vigencia: order.vigencia,
     };
+    if (this.configurationEnabled) {
+      if (order.instrumento !== this.currentInstrument || this.responsibleLoading || !this.responsibleOptions
+          || !this.selectedTitular?.puedeCrear || this.selectedTitular.error || !this.orderResponsibleId
+          || !this.operationResponsibleId || !this.modalidadReferencia) {
+        this.submissionError = this.selectedTitular?.error ?? 'Selecciona titular, responsables y modalidad para este instrumento.'; return;
+      }
+      Object.assign(propuesta, {titularRepresentanteId: this.titularId, responsableOrdenRepresentanteId: this.orderResponsibleId,
+        responsableOperacionRepresentanteId: this.operationResponsibleId, modalidadReferencia: this.modalidadReferencia,
+        revisionResponsables: this.responsibleOptions.revision});
+    }
 
     this.submissionError = '';
     this.submitting = true;
@@ -185,7 +225,7 @@ export class ClientOrdersComponent {
           this.orderForm?.reset();
         },
         error: (error) => {
-          if (error.status === 409) this.marketHours.refresh();
+          if (error.status === 409) {this.marketHours.refresh(); this.responsibleRequests.next();}
           this.submissionError = error.error?.detail || error.error?.title ||
             'No se pudo registrar la orden. Inténtalo de nuevo.';
         },
@@ -194,6 +234,13 @@ export class ClientOrdersComponent {
 
   clearOrderForm(): void {
     this.orderForm?.reset();
+  }
+  onInstrumentChanged(instrument: string): void { this.currentInstrument = instrument; this.responsibleRequests.next(); }
+  refreshResponsibles(): void { this.responsibleRequests.next(); }
+  selectTitular(): void {
+    const t = this.selectedTitular;
+    this.orderResponsibleId = t?.orden.length === 1 ? t.orden[0].representanteId : 0;
+    this.operationResponsibleId = t?.operacion.length === 1 ? t.operacion[0].representanteId : 0;
   }
 
   onClientSearchChange(value: string | ClienteSearchResult): void {
@@ -227,6 +274,7 @@ export class ClientOrdersComponent {
     this.clientSearch = result;
     this.submissionError = '';
     this.selectedClientCode = result.cosabcli;
+    this.responsibleRequests.next();
     this.clientResults = [];
     this.hasSearchedClients = false;
 
@@ -249,6 +297,7 @@ export class ClientOrdersComponent {
     this.client = null;
     this.submissionError = '';
     this.selectedClientCode = '';
+    this.responsibleRequests.next();
   }
 
   private showBlockedClientMessage(reason: string): void {

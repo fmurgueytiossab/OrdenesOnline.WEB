@@ -19,6 +19,12 @@ export interface ClientOrder {
   price: number | null;
   status: ClientOrderStatus;
   canMarkEntered?: boolean;
+  creatorId?: number | null;
+  ownerId?: number | null;
+  orderResponsible?: string | null;
+  operationResponsible?: string | null;
+  referenceMode?: string | null;
+  renta?: string | null;
 }
 
 export interface TrackingItemResponse {
@@ -37,6 +43,12 @@ export interface TrackingItemResponse {
   estado: string;
   mercado: string;
   puedeMarcarIngresado?: boolean;
+  creadoPorRepresentanteId?: number | null;
+  titularRepresentanteId?: number | null;
+  nombreResponsableOrden?: string | null;
+  nombreResponsableOperacion?: string | null;
+  modalidadReferencia?: string | null;
+  tipoRenta?: string | null;
 }
 
 export interface MarkOrderEnteredResponse {

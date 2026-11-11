@@ -102,6 +102,12 @@ export class ClientOrderTrackingService {
       status: Object.hasOwn(CLIENT_ORDER_STATUS_LABELS, status)
         ? status as ClientOrderStatus : 'DESCONOCIDO',
       canMarkEntered: status === 'FIRMADO' && item.puedeMarcarIngresado === true,
+      creatorId: item.creadoPorRepresentanteId,
+      ownerId: item.titularRepresentanteId,
+      orderResponsible: item.nombreResponsableOrden,
+      operationResponsible: item.nombreResponsableOperacion,
+      referenceMode: item.modalidadReferencia,
+      renta: item.tipoRenta,
     };
   }
 }

@@ -1,4 +1,6 @@
 import { TestBed } from '@angular/core/testing';
+import { of } from 'rxjs';
+import { RepresentantesConfiguracionService } from '../../../services/representantes-configuracion.service';
 import { provideRouter, Router } from '@angular/router';
 
 import { PORTAL_ROUTES } from '../../../shared/portal-routes';
@@ -8,7 +10,7 @@ describe('ClientPortalLayoutComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [ClientPortalLayoutComponent],
-      providers: [provideRouter([])],
+      providers: [provideRouter([]), {provide: RepresentantesConfiguracionService, useValue: {sesion: () => of({enabled: false, esAdmin: false})}}],
     }).compileComponents();
   });
 

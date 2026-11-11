@@ -9,6 +9,7 @@ import { ClienteSearchResult } from '../../../Model/ClienteSearchResult';
 import { PropuestaClienteService } from '../../../services/PropuestaClienteService';
 import { OrderFormValue } from '../../models/order-form-value';
 import { ClientOrdersComponent } from './client-orders';
+import { RepresentantesConfiguracionService } from '../../../services/representantes-configuracion.service';
 
 describe('ClientOrdersComponent client blocking', () => {
   let fixture: ComponentFixture<ClientOrdersComponent>;
@@ -18,6 +19,7 @@ describe('ClientOrdersComponent client blocking', () => {
     dismiss: vi.fn(),
   };
   const proposals = { registrar: vi.fn() };
+  const configuration = {sesion: () => of({enabled: false, esAdmin: false}), responsables: vi.fn()};
   const order: OrderFormValue = {
     tipo: 'Compra', tipoOrden: 'Limite', cantidad: 100, instrumento: 'VOLCABC1',
     precio: 0.18, monto: 18, mercado: '01', moneda: 'Soles', vigencia: 'Hoy',
@@ -31,6 +33,7 @@ describe('ClientOrdersComponent client blocking', () => {
         provideHttpClientTesting(),
         provideRouter([]),
         { provide: PropuestaClienteService, useValue: proposals },
+        { provide: RepresentantesConfiguracionService, useValue: configuration },
       ],
     })
       .overrideProvider(MatSnackBar, { useValue: snackBar })
@@ -45,6 +48,27 @@ describe('ClientOrdersComponent client blocking', () => {
   });
 
   afterEach(() => fixture.destroy());
+  it('requires an explicit executor choice and sends four independent identities through the API contract', () => {
+    configuration.responsables.mockReturnValue(of({tipoRenta: 'RV', revision: 'revision-1', titulares: [{representanteId: 9, nombre: 'Titular', puedeCrear: true, error: null,
+      orden: [{representanteId: 2, nombre: 'Manuel'}], operacion: [{representanteId: 3, nombre: 'Sofía'}, {representanteId: 4, nombre: 'Lucía'}]}]}));
+    component.configurationEnabled = true;
+    component.selectClient(client({})); component.onInstrumentChanged(order.instrumento);
+    expect(component.titularId).toBe(9); expect(component.orderResponsibleId).toBe(2); expect(component.operationResponsibleId).toBe(0);
+    component.modalidadReferencia = 'Manual'; component.submitOrder(order);
+    expect(proposals.registrar).not.toHaveBeenCalled();
+    component.operationResponsibleId = 3; component.submitOrder(order);
+    expect(proposals.registrar.mock.calls[0][0]).toMatchObject({titularRepresentanteId: 9, responsableOrdenRepresentanteId: 2,
+      responsableOperacionRepresentanteId: 3, modalidadReferencia: 'Manual', revisionResponsables: 'revision-1'});
+  });
+  it('blocks read-only portfolios and clears stale responsibility choices when the instrument changes', () => {
+    configuration.responsables.mockReturnValue(of({tipoRenta: 'RV', revision: 'revision-1', titulares: [{representanteId: 9, nombre: 'Titular', puedeCrear: false, error: null,
+      orden: [{representanteId: 2, nombre: 'Manuel'}], operacion: [{representanteId: 3, nombre: 'Sofía'}]}]}));
+    component.configurationEnabled = true; component.selectClient(client({})); component.onInstrumentChanged(order.instrumento);
+    component.modalidadReferencia = 'Inmediata'; component.submitOrder(order);
+    expect(proposals.registrar).not.toHaveBeenCalled();
+    component.onInstrumentChanged('');
+    expect(component.responsibleOptions).toBeNull(); expect(component.orderResponsibleId).toBe(0); expect(component.operationResponsibleId).toBe(0);
+  });
 
   it('shows one phone as plain text and only offers a menu for multiple phones', () => {
     component.selectClient(client({ nucel: ['999888777'] }));

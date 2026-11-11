@@ -9,6 +9,7 @@ import { ClientOrdersComponent } from './orders/pages/client-orders/client-order
 import { OrderTrackingComponent } from './orders/pages/order-tracking/order-tracking';
 import { ProposalReviewComponent } from './orders/pages/proposal-review/proposal-review';
 import { PruebaComponent } from './prueba/prueba';
+import { RepresentantesAdminComponent, representantesAdminGuard } from './orders/pages/representantes-admin/representantes-admin';
 
 const clientLoginMatcher: UrlMatcher = (segments) =>
   segments.length === 1 && segments[0].path.toLowerCase() === 'clientes'
@@ -76,6 +77,7 @@ export const routes: Routes = [
     children: [
       { path: 'ordenes', component: ClientOrdersComponent },
       { path: 'seguimiento', component: OrderTrackingComponent },
+      { path: 'administracion', component: RepresentantesAdminComponent, canActivate: [representantesAdminGuard] },
       {
         path: 'cuenta/contrasena',
         component: ChangePasswordComponent,

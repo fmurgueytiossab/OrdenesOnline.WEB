@@ -51,6 +51,7 @@ export class OrderFormComponent implements OnInit {
 
   @Output() orderSubmitted = new EventEmitter<OrderFormValue>();
   @Output() cancelled = new EventEmitter<void>();
+  @Output() instrumentChanged = new EventEmitter<string>();
 
   tipo = 'Compra';
   cantidad: number | null = null;
@@ -107,6 +108,7 @@ export class OrderFormComponent implements OnInit {
 
     if (this.initialValue) {
       this.applyInitialValue(this.initialValue);
+      this.instrumentChanged.emit(this.instrumento);
     }
 
     this.valorService.getAll().subscribe({
@@ -207,6 +209,7 @@ export class OrderFormComponent implements OnInit {
   }
 
   reset(): void {
+    this.instrumentChanged.emit('');
     this.tipo = 'Compra';
     this.cantidad = null;
     this.instrumento = '';
@@ -223,6 +226,7 @@ export class OrderFormComponent implements OnInit {
   }
 
   filterValues(text: string): void {
+    this.instrumentChanged.emit('');
     if (!text) {
       this.valoresFiltrados = [];
       return;
@@ -240,9 +244,11 @@ export class OrderFormComponent implements OnInit {
       this.moneda = '';
       this.descripcionMoneda = '';
     }
+    this.instrumentChanged.emit(selected?.mnemo ?? '');
   }
 
   selectInstrument(mnemo: string): void {
+    this.instrumentChanged.emit(mnemo);
     this.instrumento = mnemo;
     this.valoresFiltrados = [];
     const selected = this.valores.find((value) => value.mnemo === mnemo);

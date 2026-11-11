@@ -1,4 +1,9 @@
 export interface PropuestaCliente {
+  titularRepresentanteId?: number;
+  responsableOrdenRepresentanteId?: number;
+  responsableOperacionRepresentanteId?: number;
+  modalidadReferencia?: string;
+  revisionResponsables?: string;
   correoCliente?: string;
   cosabcli: string;
   tipo: string;

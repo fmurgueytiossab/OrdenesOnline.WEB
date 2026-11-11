@@ -26,6 +26,7 @@
 
     <nav class="main-navigation" aria-label="Navegación del portal">
       <span class="nav-label">Operaciones</span>
+      @if (esAdmin) {<a routerLink="/Clientes/administracion" routerLinkActive="active" (click)="closeMenu()"><span>Administración de representantes</span></a>}
 
       <a
         [routerLink]="ordersRoute"

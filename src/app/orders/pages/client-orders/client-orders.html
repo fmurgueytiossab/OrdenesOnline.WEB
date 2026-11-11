@@ -144,6 +144,24 @@
       }
     </section>
 
+    @if (configurationEnabled) {
+      <section class="responsibles-panel" aria-label="Responsables de la propuesta" [attr.aria-busy]="responsibleLoading">
+        <h2>Responsables de la propuesta</h2><p>Selecciona el cliente y el instrumento para consultar sus reglas.</p>
+        @if (responsibleLoading) {<p role="status">Consultando responsables y disponibilidad…</p>}
+        @if (responsibleError) {<p role="alert">{{responsibleError}}</p><button type="button" (click)="refreshResponsibles()">Volver a consultar</button>}
+        @if (responsibleOptions; as options) {
+          <p>Tipo de renta: <strong>{{options.tipoRenta}}</strong></p>
+          <label>Titular de cartera<select [(ngModel)]="titularId" (ngModelChange)="selectTitular()" [disabled]="submitting"><option [ngValue]="0" disabled>Seleccionar titular</option>@for (t of options.titulares; track t.representanteId) {<option [ngValue]="t.representanteId">{{t.nombre}}{{t.puedeCrear ? '' : ' · Solo consulta'}}</option>}</select></label>
+          @if (selectedTitular; as t) {
+            @if (t.error) {<p role="alert">{{t.error}}</p>}
+            @if (!t.puedeCrear) {<p role="alert">Tienes permiso para consultar esta cartera. La creación de propuestas requiere permiso operativo.</p>}
+            <label>Responsable formal de orden<select [(ngModel)]="orderResponsibleId" [disabled]="submitting || !t.puedeCrear || t.orden.length === 1"><option [ngValue]="0" disabled>Seleccionar responsable</option>@for (r of t.orden; track r.representanteId) {<option [ngValue]="r.representanteId">{{r.nombre}}</option>}</select></label>
+            <label>Responsable de ejecución<select [(ngModel)]="operationResponsibleId" [disabled]="submitting || !t.puedeCrear || t.operacion.length === 1"><option [ngValue]="0" disabled>Seleccionar ejecutor disponible</option>@for (r of t.operacion; track r.representanteId) {<option [ngValue]="r.representanteId">{{r.nombre}}</option>}</select></label>
+            <label>Modalidad referencial<select [(ngModel)]="modalidadReferencia" [disabled]="submitting"><option value="" disabled>Seleccionar modalidad</option><option>Inmediata</option><option>Manual</option></select></label>
+          }
+        }
+      </section>
+    }
     <div class="order-form-shell" [class.blocked]="orderFormDisabled">
       <app-order-form
         [attr.aria-disabled]="orderFormDisabled"
@@ -155,6 +173,7 @@
         cancelLabel="Limpiar formulario"
         [showCancelArrow]="false"
         (orderSubmitted)="submitOrder($event)"
+        (instrumentChanged)="onInstrumentChanged($event)"
         (cancelled)="clearOrderForm()" />
 
       @if (orderFormDisabled) {

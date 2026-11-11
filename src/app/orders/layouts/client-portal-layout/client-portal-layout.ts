@@ -1,4 +1,6 @@
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, DestroyRef, OnInit, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { RepresentantesConfiguracionService } from '../../../services/representantes-configuracion.service';
 import { ActivatedRoute, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 
 import { normalizePortal, PORTAL_ROUTES, PortalType } from '../../../shared/portal-routes';
@@ -14,6 +16,10 @@ export class ClientPortalLayoutComponent implements OnInit {
   portal: PortalType = 'clientes';
   accountEmail = 'usuario@correo.com';
   menuOpen = false;
+  esAdmin = false;
+  private readonly configuration = inject(RepresentantesConfiguracionService);
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly cdr = inject(ChangeDetectorRef);
 
   constructor(
     private readonly route: ActivatedRoute,
@@ -49,6 +55,7 @@ export class ClientPortalLayoutComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    this.configuration.sesion().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({next: s => {this.esAdmin = s.esAdmin; this.cdr.markForCheck();}, error: () => {this.esAdmin = false;}});
     const portalData = this.route.snapshot.data['portal'];
     if (portalData) this.portal = normalizePortal(portalData);
 
