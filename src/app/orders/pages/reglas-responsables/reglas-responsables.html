@@ -1,0 +1,47 @@
+<div class="rules-page">
+  <header><div><span class="eyebrow">Administración</span><h1>Reglas de responsables</h1><p>Configura quién envía la orden y quién ejecuta la operación para cada titular y tipo de renta.</p></div><button mat-flat-button type="button" class="primary new-rule-button" (click)="nueva()" [disabled]="busy || !data">Nueva regla</button></header>
+  @if (error && !mostrarFormulario) {<p class="error" role="alert">{{error}}</p>}
+  @if (data; as d) {
+    @if (mostrarFormulario) {<app-portal-modal [title]="esEdicion ? 'Editar regla de responsables' : 'Nueva regla de responsables'" [busy]="busy" (closed)="cerrarEditor()">@if (error) {<p class="error" role="alert">{{error}}</p>}
+        <p>{{esEdicion ? 'Los cambios se aplican a nuevas propuestas. Las ya guardadas conservan sus responsables.' : 'Crea una regla para una combinación de titular, renta y acción.'}}</p>
+        <form (ngSubmit)="guardar()"><fieldset [disabled]="busy"><legend>{{esEdicion ? 'Regla seleccionada' : 'Titular, renta y acción'}}</legend>
+        @if (esEdicion) {
+          @if (contextoEdicion; as context) {
+            <div class="rule-context" role="group" aria-label="Regla seleccionada"><strong>{{context.titular}}</strong><div class="context-tags"><span>{{context.tipoRenta === 'RF' ? 'RF · Renta fija' : 'RV · Renta variable'}}</span><span>{{accionNombre(context.accion)}}</span><span>Regla #{{context.reglaId}}</span></div></div>
+          }
+        } @else {
+          <div class="fields rule-key-fields">
+          <mat-form-field appearance="outline" subscriptSizing="dynamic"><mat-label>Titular</mat-label><mat-select name="titular" [(ngModel)]="form.titularId" (ngModelChange)="seleccionarClave()" panelClass="tracking-select-panel"><mat-option [value]="0" disabled>Seleccionar titular</mat-option>@for (p of d.representantes; track p.representanteId) {<mat-option [value]="p.representanteId">{{p.nombre}}{{p.activo ? '' : ' (inactivo)'}}</mat-option>}</mat-select></mat-form-field>
+          <mat-form-field appearance="outline" subscriptSizing="dynamic"><mat-label>Renta</mat-label><mat-select name="renta" [(ngModel)]="form.renta" (ngModelChange)="seleccionarClave()" panelClass="tracking-select-panel"><mat-option value="RF">RF · Renta fija</mat-option><mat-option value="RV">RV · Renta variable</mat-option></mat-select></mat-form-field>
+          <mat-form-field appearance="outline" subscriptSizing="dynamic"><mat-label>Acción</mat-label><mat-select name="accion" [(ngModel)]="form.accion" (ngModelChange)="seleccionarClave()" panelClass="tracking-select-panel"><mat-option value="ENVIO_ORDEN">Envío de orden</mat-option><mat-option value="ENVIO_OPERACION">Ejecución de operación</mat-option></mat-select></mat-form-field>
+        </div>
+          @if (reglaExistente; as existing) {<div class="notice existing-rule"><p>Ya existe una regla vigente para esta combinación.</p><button mat-stroked-button type="button" (click)="editar(existing)">Editar esta regla</button></div>}
+        }
+        @if (mostrarConfiguracion) {
+        <mat-form-field class="responsibility-mode" appearance="outline" subscriptSizing="dynamic"><mat-label>Responsables permitidos</mat-label><mat-select name="modo" [(ngModel)]="form.modo" (ngModelChange)="cambiarModo()" panelClass="tracking-select-panel"><mat-option value="TITULAR">El mismo titular</mat-option><mat-option value="LISTA">Lista de responsables</mat-option></mat-select></mat-form-field>
+        @if (form.modo === 'TITULAR') {<p class="notice">Se usará al titular de la cartera, aunque otra persona prepare la propuesta.</p>}
+        @if (form.modo === 'LISTA') {
+          <div class="list-heading"><h3>Seleccionar responsables <span class="count">{{form.opciones.length}} seleccionados</span></h3><mat-form-field appearance="outline" subscriptSizing="dynamic"><mat-label>Buscar persona</mat-label><input matInput name="buscarResponsable" [(ngModel)]="buscarResponsable" placeholder="Nombre o correo"></mat-form-field></div>
+          <p class="hint">Las ausencias vigentes afectan la disponibilidad para ejecutar, pero no eliminan a la persona de esta lista.</p>
+          <div class="options">@for (p of responsablesVisibles; track p.representanteId) {<mat-checkbox class="person"   [checked]="form.opciones.includes(p.representanteId)" (change)="toggle(p.representanteId, $event.checked)" [disabled]="!p.activo && !form.opciones.includes(p.representanteId)"><span><strong>{{p.nombre}}</strong><small>{{p.correoCorporativo}}</small>@if (!p.activo) {<em>Cuenta inactiva: quitar de la lista</em>} @else if (form.accion === 'ENVIO_OPERACION' && !p.disponibleEjecutar) {<em>Ausencia vigente</em>}</span></mat-checkbox>}</div>
+          @if (!responsablesVisibles.length) {<p class="empty">No hay personas para esta búsqueda.</p>}
+        }
+        <mat-checkbox class="check"   name="activo" [(ngModel)]="form.activo">Regla activa</mat-checkbox>
+        @if (!form.activo) {<p class="notice">Esta combinación quedará sin regla vigente y bloqueará nuevas propuestas que la necesiten.</p>}
+        }</fieldset>
+        <div class="actions rule-editor-actions"><button mat-stroked-button type="button" (click)="cerrarEditor()" [disabled]="busy">{{esEdicion ? 'Cancelar edición' : 'Cancelar'}}</button><button mat-flat-button type="submit" class="primary" [disabled]="!puedeGuardar">{{esEdicion ? 'Guardar cambios' : 'Crear regla'}}</button></div></form>
+      </app-portal-modal>}
+    <section><h2>Consultar reglas</h2><div class="fields">
+      <mat-form-field appearance="outline" subscriptSizing="dynamic"><mat-label>Titular</mat-label><mat-select name="titularFiltro" [(ngModel)]="titularFiltro" (ngModelChange)="filtrar()" panelClass="tracking-select-panel"><mat-option [value]="0">Todos</mat-option>@for (p of d.representantes; track p.representanteId) {<mat-option [value]="p.representanteId">{{p.nombre}}</mat-option>}</mat-select></mat-form-field>
+      <mat-form-field appearance="outline" subscriptSizing="dynamic"><mat-label>Renta</mat-label><mat-select name="rentaFiltro" [(ngModel)]="rentaFiltro" (ngModelChange)="filtrar()" panelClass="tracking-select-panel"><mat-option value="">Todas</mat-option><mat-option value="RF">RF</mat-option><mat-option value="RV">RV</mat-option></mat-select></mat-form-field>
+      <mat-form-field appearance="outline" subscriptSizing="dynamic"><mat-label>Acción</mat-label><mat-select name="accionFiltro" [(ngModel)]="accionFiltro" (ngModelChange)="filtrar()" panelClass="tracking-select-panel"><mat-option value="">Todas</mat-option><mat-option value="ENVIO_ORDEN">Envío de orden</mat-option><mat-option value="ENVIO_OPERACION">Ejecución de operación</mat-option></mat-select></mat-form-field>
+      <mat-form-field appearance="outline" subscriptSizing="dynamic"><mat-label>Buscar</mat-label><input matInput name="buscarRegla" [(ngModel)]="busqueda" (ngModelChange)="filtrar()" placeholder="ID, titular o responsable"></mat-form-field>
+    </div><div class="rules-filter-actions"><mat-checkbox class="check" [(ngModel)]="incluirHistorial" (ngModelChange)="filtrar()">Incluir versiones anteriores e inactivas</mat-checkbox><button mat-stroked-button type="button" (click)="limpiarFiltros()">Limpiar filtros</button></div>
+      @if (!reglasFiltradas.length) {<p class="empty">No hay reglas para los filtros seleccionados.</p>} @else {
+        <div class="table-scroll"><table><thead><tr><th scope="col">ID</th><th scope="col">Titular</th><th scope="col">Renta / acción</th><th scope="col">Resolución</th><th scope="col">Responsables</th><th scope="col">Estado</th><th scope="col">Último cambio</th><th scope="col">Acción</th></tr></thead><tbody>
+          @for (r of reglasPagina; track r.reglaId) {<tr><td>#{{r.reglaId}}</td><td>{{r.titular}}</td><td>{{r.tipoRenta}}<small>{{accionNombre(r.accion)}}</small></td><td>{{r.modoResolucion === 'TITULAR' ? 'El mismo titular' : 'Lista'}}</td><td><app-responsible-list [names]="responsablesDe(r)" /></td><td><span class="badge" [class.inactive]="!r.activo">{{r.activo ? 'Vigente' : 'Histórica / inactiva'}}</span></td><td>{{r.modificadoPor}}<small>{{r.fechaModificacionUtc | date:'dd/MM/yyyy HH:mm':'-0500'}}</small></td><td>@if (r.activo) {<button mat-stroked-button type="button" (click)="editar(r)" [disabled]="busy">Editar regla</button>} @else {<span class="hint">Solo consulta</span>}</td></tr>}
+        </tbody></table></div><div class="pagination"><span>{{reglasFiltradas.length}} reglas · Página {{pagina}} de {{paginas}}</span><div class="actions"><button mat-stroked-button type="button" (click)="pagina = pagina - 1" [disabled]="pagina <= 1">Anterior</button><button mat-stroked-button type="button" (click)="pagina = pagina + 1" [disabled]="pagina >= paginas">Siguiente</button></div></div>
+      }
+    </section>
+  } @else if (busy) {<p role="status">Cargando reglas…</p>}
+</div>

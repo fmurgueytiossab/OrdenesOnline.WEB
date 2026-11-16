@@ -21,6 +21,10 @@ export interface ClientOrder {
   canMarkEntered?: boolean;
   creatorId?: number | null;
   ownerId?: number | null;
+  operationResponsibleId?: number | null;
+  enteredById?: number | null;
+  enteredByName?: string | null;
+  enteredAt?: string | null;
   orderResponsible?: string | null;
   operationResponsible?: string | null;
   referenceMode?: string | null;
@@ -45,6 +49,10 @@ export interface TrackingItemResponse {
   puedeMarcarIngresado?: boolean;
   creadoPorRepresentanteId?: number | null;
   titularRepresentanteId?: number | null;
+  responsableOperacionRepresentanteId?: number | null;
+  ingresadoPorRepresentanteId?: number | null;
+  nombreIngresadoPor?: string | null;
+  fechaIngresoUtc?: string | null;
   nombreResponsableOrden?: string | null;
   nombreResponsableOperacion?: string | null;
   modalidadReferencia?: string | null;

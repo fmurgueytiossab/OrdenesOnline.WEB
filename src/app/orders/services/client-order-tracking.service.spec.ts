@@ -30,7 +30,7 @@ describe('ClientOrderTrackingService', () => {
     );
     expect(request.request.method).toBe('GET');
     request.flush({
-      items: [trackingItem()],
+      items: [{...trackingItem(),creadoPorRepresentanteId:34,responsableOperacionRepresentanteId:3,ingresadoPorRepresentanteId:3,nombreIngresadoPor:'Miguel',fechaIngresoUtc:'2026-11-16T17:20:00Z'}],
       page: 1,
       pageSize: 100,
       totalCount: 1,
@@ -47,7 +47,7 @@ describe('ClientOrderTrackingService', () => {
         proposedQuantity: 100,
         executedQuantity: 0,
         pendingQuantity: 100,
-        status: 'PENDIENTE',
+        status: 'PENDIENTE', creatorId: 34, operationResponsibleId: 3, enteredById: 3, enteredByName: 'Miguel', enteredAt: '2026-11-16T17:20:00Z',
       }),
     ]);
     expect(service.orders()).toEqual(result);

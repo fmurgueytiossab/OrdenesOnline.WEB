@@ -42,6 +42,14 @@ export class ClientPortalLayoutComponent implements OnInit {
     return this.portal === 'clientes' ? PORTAL_ROUTES.clientes.tracking : null;
   }
 
+  get absenceRoute(): string { return this.portal === 'clientes' ? '/Clientes/ausencias' : '/Representantes/ausencias'; }
+
+  get groupsRoute(): string { return this.portal === 'clientes' ? '/Clientes/grupos' : '/Representantes/grupos'; }
+
+  get rulesRoute(): string { return this.portal === 'clientes' ? '/Clientes/reglas-responsables' : '/Representantes/reglas-responsables'; }
+
+  get summaryRoute(): string { return this.portal === 'clientes' ? '/Clientes/administracion' : '/Representantes/administracion'; }
+
   get portalLabel(): string {
     return this.portal === 'clientes' ? 'Portal de clientes' : 'Portal de representantes';
   }

@@ -1,3 +1,4 @@
+import { MatSelectModule } from '@angular/material/select';
 import { CommonModule } from '@angular/common';
 import { ChangeDetectorRef, Component, DestroyRef, ViewChild, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -6,7 +7,7 @@ import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatMenuModule } from '@angular/material/menu';
-import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { Router } from '@angular/router';
 import {
   catchError,
@@ -15,14 +16,14 @@ import {
   of,
   Subject,
   switchMap,
-  timeout,
 } from 'rxjs';
 
 import { ClienteSearchResult } from '../../../Model/ClienteSearchResult';
 import { PropuestaCliente } from '../../../Model/PropuestaCliente';
 import { ClienteService } from '../../../services/ClienteService';
 import { PropuestaClienteService } from '../../../services/PropuestaClienteService';
-import { RepresentantesConfiguracionService, Responsables, Titular } from '../../../services/representantes-configuracion.service';
+import { RepresentantesConfiguracionService, Responsable, Responsables, Titular } from '../../../services/representantes-configuracion.service';
+import { PortalFeedbackService } from '../../../shared/portal-feedback.service';
 import { OrderFormComponent } from '../../components/order-form/order-form';
 import { MarketOption, OrderFormValue } from '../../models/order-form-value';
 import { ClientOrderTrackingService } from '../../services/client-order-tracking.service';
@@ -45,6 +46,7 @@ interface ClientIdentity {
     FormsModule,
     MatAutocompleteModule,
     MatFormFieldModule,
+    MatSelectModule,
     MatInputModule,
     MatMenuModule,
     MatSnackBarModule,
@@ -53,6 +55,7 @@ interface ClientIdentity {
 })
 export class ClientOrdersComponent {
   private readonly marketHours = inject(MarketHoursService);
+  private readonly feedback = inject(PortalFeedbackService);
   @ViewChild(OrderFormComponent) private orderForm?: OrderFormComponent;
 
   submitting = false;
@@ -71,8 +74,9 @@ export class ClientOrdersComponent {
   titularId = 0;
   orderResponsibleId = 0;
   operationResponsibleId = 0;
-  modalidadReferencia = '';
+  modalidadReferencia: 'Inmediata' | 'Manual' = 'Inmediata';
   private currentInstrument = '';
+  get hasSelectedInstrument() { return !!this.currentInstrument; }
   private readonly responsibleRequests = new Subject<void>();
   get selectedTitular(): Titular | undefined { return this.responsibleOptions?.titulares.find(t => t.representanteId === this.titularId); }
   private readonly clientSearchTerms = new Subject<string>();
@@ -95,7 +99,6 @@ export class ClientOrdersComponent {
   constructor(
     private readonly propuestaClienteService: PropuestaClienteService,
     private readonly router: Router,
-    private readonly snackBar: MatSnackBar,
     private readonly cdr: ChangeDetectorRef,
     private readonly clienteService: ClienteService,
     destroyRef: DestroyRef,
@@ -108,15 +111,20 @@ export class ClientOrdersComponent {
       if (!this.configurationEnabled || !this.selectedClientCode || !this.currentInstrument) return of(null);
       this.responsibleLoading = true;
       return this.configurationApi.responsables(this.selectedClientCode, this.currentInstrument).pipe(
-        catchError(error => {this.responsibleError = error.error?.title ?? 'No se pudieron resolver los responsables.'; return of(null);}));
+        catchError(error => {
+          this.responsibleError = error.error?.detail || error.error?.title || 'No se pudieron resolver los responsables.';
+          this.feedback.error(this.responsibleError);
+          return of(null);
+        }));
     }), takeUntilDestroyed(destroyRef)).subscribe(options => {
       this.responsibleLoading = false; this.responsibleOptions = options;
+      if (options && !options.titulares.length) this.feedback.error('No hay titulares de cartera configurados para este cliente.');
       if (options?.titulares.length === 1) {this.titularId = options.titulares[0].representanteId; this.selectTitular();}
       this.cdr.markForCheck();
     });
     this.configurationApi.sesion().pipe(takeUntilDestroyed(destroyRef)).subscribe({next: session => {
       this.configurationEnabled = session.enabled; this.configurationLoaded = true; this.responsibleRequests.next(); this.cdr.markForCheck();
-    }, error: () => {this.responsibleError = 'No se pudo comprobar la configuración. Recarga la página antes de enviar.'; this.cdr.markForCheck();}});
+    }, error: () => {this.responsibleError = 'No se pudo comprobar la configuración. Recarga la página antes de enviar.'; this.feedback.error(this.responsibleError); this.cdr.markForCheck();}});
     this.sourceOrderId = this.router.parseUrl(this.router.url).queryParams['sourceOrderId'] ?? null;
     const sourceOrder = this.sourceOrderId ? trackingService.getById(this.sourceOrderId) : undefined;
     this.initialOrder = sourceOrder
@@ -169,9 +177,10 @@ export class ClientOrdersComponent {
   }
 
   submitOrder(order: OrderFormValue): void {
-    if (!this.configurationLoaded) {this.submissionError = 'Espera a que se compruebe la configuración de responsables.'; return;}
+    if (this.submitting) return;
+    if (!this.configurationLoaded) {this.feedback.error('Espera a que se compruebe la configuración de responsables.'); return;}
     if (!this.client || !this.selectedClientCode) {
-      this.showMessage('Debe buscar y seleccionar un cliente', true);
+      this.feedback.error('Debe buscar y seleccionar un cliente');
       return;
     }
 
@@ -198,14 +207,12 @@ export class ClientOrdersComponent {
       vigencia: order.vigencia,
     };
     if (this.configurationEnabled) {
-      if (order.instrumento !== this.currentInstrument || this.responsibleLoading || !this.responsibleOptions
-          || !this.selectedTitular?.puedeCrear || this.selectedTitular.error || !this.orderResponsibleId
-          || !this.operationResponsibleId || !this.modalidadReferencia) {
-        this.submissionError = this.selectedTitular?.error ?? 'Selecciona titular, responsables y modalidad para este instrumento.'; return;
+      if (order.instrumento !== this.currentInstrument || this.responsibleSubmissionBlocked || !this.modalidadReferencia) {
+        this.feedback.error(this.responsibleSelectionError || this.responsibleError || 'Selecciona titular, responsables y modalidad para este instrumento.'); return;
       }
       Object.assign(propuesta, {titularRepresentanteId: this.titularId, responsableOrdenRepresentanteId: this.orderResponsibleId,
         responsableOperacionRepresentanteId: this.operationResponsibleId, modalidadReferencia: this.modalidadReferencia,
-        revisionResponsables: this.responsibleOptions.revision});
+        revisionResponsables: this.responsibleOptions!.revision});
     }
 
     this.submissionError = '';
@@ -213,34 +220,65 @@ export class ClientOrdersComponent {
     this.propuestaClienteService
       .registrar(propuesta)
       .pipe(
-        timeout(8000),
         finalize(() => {
           this.submitting = false;
           this.cdr.detectChanges();
         }),
       )
       .subscribe({
-        next: () => {
-          this.showMessage('✅ Orden de cliente enviada correctamente');
+        next: result => {
+          if (result.warning || !result.docuSignEnviado) {
+            this.feedback.error(`Propuesta #${result.propuestaId} guardada. ${result.warning || 'El envío para firma aún no está confirmado. Revisa Mis órdenes antes de repetir.'}`);
+          } else {
+            this.feedback.success(result.reutilizada ? result.message : `Propuesta #${result.propuestaId} creada y envío aceptado para firma.`);
+          }
+          this.modalidadReferencia = 'Inmediata';
           this.orderForm?.reset();
         },
         error: (error) => {
           if (error.status === 409) {this.marketHours.refresh(); this.responsibleRequests.next();}
-          this.submissionError = error.error?.detail || error.error?.title ||
-            'No se pudo registrar la orden. Inténtalo de nuevo.';
+          const uncertain = error.status === 0 || error.status >= 500 || error.name === 'TimeoutError';
+          this.submissionError = (!uncertain && (error.error?.detail || error.error?.title)) ||
+            'No se pudo confirmar el resultado del envío. La propuesta puede haberse guardado. Si reintentas la misma orden, se comprobará el registro existente.';
+          this.feedback.error(this.submissionError);
         },
       });
   }
 
   clearOrderForm(): void {
+    this.modalidadReferencia = 'Inmediata';
     this.orderForm?.reset();
   }
-  onInstrumentChanged(instrument: string): void { this.currentInstrument = instrument; this.responsibleRequests.next(); }
+  onInstrumentChanged(instrument: string): void { if (instrument === this.currentInstrument) return; this.currentInstrument = instrument; this.responsibleRequests.next(); }
   refreshResponsibles(): void { this.responsibleRequests.next(); }
+  get responsibleSubmissionBlocked(): boolean {
+    if (!this.configurationLoaded) return true;
+    if (!this.configurationEnabled) return false;
+    const titular = this.selectedTitular;
+    return this.responsibleLoading || !!this.responsibleError || !this.responsibleOptions
+      || !titular?.puedeCrear || !!titular.error
+      || !titular.orden.some(r => r.representanteId === this.orderResponsibleId && r.disponible !== false)
+      || !titular.operacion.some(r => r.representanteId === this.operationResponsibleId && r.disponible !== false);
+  }
+  responsibleLabel(person: Responsable): string {
+    return person.disponible === false ? `${person.nombre} — ${this.unavailabilityLabel(person)}` : person.nombre;
+  }
+  unavailabilityLabel(person: Responsable | undefined): string {
+    return person?.motivoNoDisponible ? `No disponible — ${person.motivoNoDisponible}` : 'No disponible';
+  }
+  get responsibleSelectionError(): string | null {
+    const titular = this.selectedTitular;
+    if (!titular) return null;
+    if (!titular.puedeCrear) return titular.error || 'Tienes permiso para consultar esta cartera. La creación de propuestas requiere permiso operativo.';
+    return titular.error;
+  }
   selectTitular(): void {
     const t = this.selectedTitular;
-    this.orderResponsibleId = t?.orden.length === 1 ? t.orden[0].representanteId : 0;
-    this.operationResponsibleId = t?.operacion.length === 1 ? t.operacion[0].representanteId : 0;
+    const orders = t?.orden.filter(r => r.disponible !== false) ?? [];
+    const operations = t?.operacion.filter(r => r.disponible !== false) ?? [];
+    this.orderResponsibleId = orders.length === 1 ? orders[0].representanteId : 0;
+    this.operationResponsibleId = operations.length === 1 ? operations[0].representanteId : 0;
+    if (this.responsibleSelectionError) this.feedback.error(this.responsibleSelectionError);
   }
 
   onClientSearchChange(value: string | ClienteSearchResult): void {
@@ -274,7 +312,6 @@ export class ClientOrdersComponent {
     this.clientSearch = result;
     this.submissionError = '';
     this.selectedClientCode = result.cosabcli;
-    this.responsibleRequests.next();
     this.clientResults = [];
     this.hasSearchedClients = false;
 
@@ -284,8 +321,9 @@ export class ClientOrdersComponent {
       this.showMissingPhoneMessage();
     } else {
       this.orderBlockMessage = '';
-      this.snackBar.dismiss();
+      this.feedback.dismiss();
     }
+    this.responsibleRequests.next();
   }
 
   displayClientName(value: string | ClienteSearchResult | null): string {
@@ -310,12 +348,4 @@ export class ClientOrdersComponent {
       'No se puede proseguir porque el cliente no cuenta con número de celular';
   }
 
-  private showMessage(message: string, isError = false, duration = 4000): void {
-    this.snackBar.open(message, '', {
-      duration,
-      horizontalPosition: 'center',
-      verticalPosition: 'top',
-      panelClass: isError ? ['snack-error'] : undefined,
-    });
-  }
 }

@@ -1,0 +1,3 @@
+@import "../../../shared/representantes-ui.css";
+
+.member-add-actions{justify-content:flex-end;margin-top:24px}

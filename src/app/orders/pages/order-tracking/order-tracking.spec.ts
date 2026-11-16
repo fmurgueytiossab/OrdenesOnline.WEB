@@ -1,3 +1,4 @@
+import { PortalFeedbackService } from '../../../shared/portal-feedback.service';
 import { ChangeDetectorRef, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRoute, Router, convertToParamMap } from '@angular/router';
@@ -8,6 +9,8 @@ import { ClientOrderTrackingService } from '../../services/client-order-tracking
 import { OrderTrackingComponent } from './order-tracking';
 
 describe('OrderTrackingComponent', () => {
+  const feedback = {success: vi.fn(), error: vi.fn()};
+  beforeEach(() => {feedback.success.mockClear(); feedback.error.mockClear(); TestBed.configureTestingModule({providers: [{provide: PortalFeedbackService, useValue: feedback}]});});
   function createState() {
     const orders = signal<ClientOrder[]>(['BVL', 'CANACCORD', 'EUROCLEAR', 'EXTRANJERO'].map(
       (channel, index) => ({
@@ -40,6 +43,33 @@ describe('OrderTrackingComponent', () => {
     ));
     return { component, navigate, orders, markEntered, loadOrders, tracking };
   }
+
+  it('shows the creator waiting for Miguel, allows only the assigned executor and identifies who entered it', async () => {
+    const { orders, tracking } = createState();
+    orders.set([
+      {...orders()[0], id: 1, status: 'FIRMADO', operationResponsible: 'Miguel', canMarkEntered: false},
+      {...orders()[0], id: 2, status: 'FIRMADO', operationResponsible: 'Miguel', canMarkEntered: true},
+      {...orders()[0], id: 3, status: 'INGRESADO', operationResponsible: 'Miguel', canMarkEntered: false,
+        enteredByName: 'Miguel', enteredAt: '2026-11-16T17:20:00Z'},
+    ]);
+    await TestBed.configureTestingModule({imports: [OrderTrackingComponent],providers: [
+      {provide: ClientOrderTrackingService,useValue: tracking},
+      {provide: ActivatedRoute,useValue: {snapshot:{queryParamMap:convertToParamMap({})}}},
+      {provide: Router,useValue:{navigate:vi.fn().mockResolvedValue(true)}},
+    ]}).compileComponents();
+    const fixture=TestBed.createComponent(OrderTrackingComponent);fixture.detectChanges();
+    const rows=[...fixture.nativeElement.querySelectorAll('tbody tr')] as HTMLElement[];
+    const waiting=rows.find(row=>row.textContent?.includes('Esperando ingreso por Miguel'))!;
+    expect(waiting.querySelector('.enter-button')).toBeNull();
+    expect(fixture.nativeElement.querySelectorAll('.enter-button')).toHaveLength(1);
+    expect(fixture.nativeElement.textContent).toContain('Ingresada por Miguel');
+    fixture.componentInstance.markEntered(orders()[0]);expect(tracking.markEntered).not.toHaveBeenCalled();
+    const enteredRow=fixture.nativeElement.querySelector('[data-status="INGRESADO"]').closest('tr');
+    enteredRow.querySelector('button').click();await fixture.whenStable();
+    expect(fixture.nativeElement.querySelector('.dialog').textContent).toContain('Ingresada por Miguel');
+    expect(fixture.nativeElement.querySelector('.dialog').textContent).toContain('16/11/2026, 12:20');
+    fixture.destroy();
+  });
 
   it('partitions proposals by policy while keeping unclassified proposals in Todas', () => {
     const { component } = create();
@@ -103,7 +133,7 @@ describe('OrderTrackingComponent', () => {
     component.markEntered(signed);
     expect(markEntered).toHaveBeenCalledExactlyOnceWith(signed.id);
     expect(component.selectedOrder?.status).toBe('INGRESADO');
-    expect(component.actionSuccess).toContain('#1');
+    expect(feedback.success).toHaveBeenCalledWith('La orden #1 fue marcada como ingresada.');
     expect(component.currentPage).toBe(1);
     expect(component.filteredOrders).toEqual([]);
   });
@@ -127,8 +157,8 @@ describe('OrderTrackingComponent', () => {
     const { component, orders, markEntered, loadOrders } = create();
     markEntered.mockReturnValue(throwError(() => ({ status: 409, error: { detail: 'Faltan firmas.' } })));
     component.markEntered({ ...orders()[0], status: 'FIRMADO', canMarkEntered: true });
-    expect(component.actionError).toBe('Faltan firmas.');
-    expect(component.actionSuccess).toBe('');
+    expect(feedback.error).toHaveBeenCalledWith('Faltan firmas.');
+    expect(feedback.success).not.toHaveBeenCalled();
     expect(component.updatingOrderId).toBeNull();
     expect(loadOrders).toHaveBeenCalledOnce();
   });
@@ -168,7 +198,8 @@ describe('OrderTrackingComponent', () => {
     expect(buttons[0].disabled).toBe(true);
     response.error({ status: 500, error: { detail: 'No se pudo guardar.' } });
     await fixture.whenStable();
-    expect(fixture.nativeElement.querySelector('[role="alert"]').textContent).toContain('No se pudo guardar.');
+    expect(feedback.error).toHaveBeenCalledWith('No se pudo guardar.');
+    expect(fixture.nativeElement.querySelector('.error-notice')).toBeNull();
     expect(buttons[0].disabled).toBe(false);
     fixture.destroy();
   });

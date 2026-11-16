@@ -1,3 +1,4 @@
+import { PortalFeedbackService } from '../../../shared/portal-feedback.service';
 import { CommonModule } from '@angular/common';
 import { ChangeDetectorRef, Component, DestroyRef, OnInit, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -35,6 +36,7 @@ type SideFilter = ClientOrder['side'] | 'ALL';
 })
 export class OrderTrackingComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
+  private readonly feedback = inject(PortalFeedbackService);
   private readonly cdr = inject(ChangeDetectorRef);
   private readonly refreshIntervalMs = 30_000;
 
@@ -52,8 +54,6 @@ export class OrderTrackingComponent implements OnInit {
 
   loading = false;
   loadError = '';
-  actionError = '';
-  actionSuccess = '';
   updatingOrderId: number | null = null;
   lastUpdatedAt: Date | null = null;
   selectedOrder: ClientOrder | null = null;
@@ -146,11 +146,18 @@ export class OrderTrackingComponent implements OnInit {
     this.updateUrl();
   }
 
+  entryStatus(order: ClientOrder): string {
+    if (order.status === 'INGRESADO') return order.enteredByName ? `Ingresada por ${order.enteredByName}` : 'Ingresada';
+    if (order.status === 'FIRMADO') {
+      if (order.canMarkEntered) return 'Lista para ingresar';
+      return order.operationResponsible ? `Esperando ingreso por ${order.operationResponsible}` : 'Sin ejecutor asignado';
+    }
+    return order.status === 'CANCELADO' ? 'Proceso finalizado' : 'Pendiente de firma';
+  }
+
   markEntered(order: ClientOrder): void {
     if (order.status !== 'FIRMADO' || !order.canMarkEntered || this.loading || this.updatingOrderId !== null) return;
     this.updatingOrderId = order.id;
-    this.actionError = '';
-    this.actionSuccess = '';
     this.trackingService.markEntered(order.id)
       .pipe(takeUntilDestroyed(this.destroyRef), finalize(() => {
         this.updatingOrderId = null;
@@ -158,14 +165,16 @@ export class OrderTrackingComponent implements OnInit {
       }))
       .subscribe({
         next: () => {
-          this.actionSuccess = `La orden #${order.id} fue marcada como ingresada.`;
+          this.feedback.success(`La orden #${order.id} fue marcada como ingresada.`);
           if (this.selectedOrder?.id === order.id) {
             this.selectedOrder = { ...this.selectedOrder, status: 'INGRESADO', canMarkEntered: false };
           }
           if (this.currentPage > this.totalPages) this.currentPage = this.totalPages;
+          this.updatingOrderId = null;
+          this.refreshOrders();
         },
         error: (error) => {
-          this.actionError = error.error?.detail || error.error?.title || 'No se pudo marcar la orden como ingresada. Inténtalo nuevamente.';
+          this.feedback.error(error.error?.detail || error.error?.title || 'No se pudo marcar la orden como ingresada. Inténtalo nuevamente.');
           if (error.status === 409) this.refreshAfterConflict();
         },
       });

@@ -1,0 +1,41 @@
+<div class="groups-page">
+  <header><div><span class="eyebrow">Administración</span><h1>Grupos de representantes</h1><p>Crea grupos, organiza sus subgrupos y consulta quiénes pertenecen a cada uno.</p></div><div class="actions"><button mat-flat-button type="button" class="primary" (click)="nuevo()" [disabled]="busy">Nuevo grupo</button></div></header>
+  @if (error && !mostrarFormulario && !mostrarMiembro) {<p class="error" role="alert">{{error}}</p>}
+  @if (data; as d) {
+    @if (mostrarFormulario) {<app-portal-modal [title]="grupo.id ? 'Editar grupo' : 'Crear grupo'" [busy]="busy" (closed)="cerrarGrupo()">@if (error) {<p class="error" role="alert">{{error}}</p>}<form #groupForm="ngForm" (ngSubmit)="guardarGrupo()"><div class="fields">
+        <mat-form-field appearance="outline" subscriptSizing="dynamic"><mat-label>Nombre</mat-label><input matInput name="nombre" [(ngModel)]="grupo.nombre" maxlength="100" required [disabled]="busy"></mat-form-field>
+        <mat-form-field appearance="outline" subscriptSizing="dynamic"><mat-label>Grupo padre</mat-label><mat-select name="padre" [(ngModel)]="grupo.grupoPadreId" [disabled]="busy" panelClass="tracking-select-panel"><mat-option [value]="null">Sin grupo padre</mat-option>@for (p of padresDisponibles; track p.grupoId) {<mat-option [value]="p.grupoId">{{path(p.grupoId)}}{{p.activo ? '' : ' (inactivo)'}}</mat-option>}</mat-select></mat-form-field>
+      </div><div class="checks"><mat-checkbox   name="activo" [(ngModel)]="grupo.activo" [disabled]="busy">Grupo activo</mat-checkbox><mat-checkbox   name="global" [(ngModel)]="grupo.puedeConsultarTodosClientes" [disabled]="busy">Consulta global de clientes</mat-checkbox></div>
+        <p class="hint">La consulta global permite a sus integrantes directos ver todos los clientes activos. No amplía por sí sola las carteras para operar.</p>
+        <div class="actions"><button mat-flat-button class="primary" type="submit" [disabled]="busy || !groupForm.valid || !grupo.nombre.trim()">Guardar grupo</button><button mat-stroked-button type="button" (click)="cerrarGrupo()" [disabled]="busy">Cancelar edición</button></div>
+      </form></app-portal-modal>}
+    <div class="columns">
+      <section><h2>Grupos <span class="count">{{d.grupos.length}}</span></h2><div class="fields compact"><mat-form-field appearance="outline" subscriptSizing="dynamic"><mat-label>Buscar grupo</mat-label><input matInput name="buscarGrupo" [(ngModel)]="busqueda" placeholder="Nombre o grupo padre"></mat-form-field><mat-form-field appearance="outline" subscriptSizing="dynamic"><mat-label>Estado</mat-label><mat-select name="estado" [(ngModel)]="estado" panelClass="tracking-select-panel"><mat-option value="">Todos</mat-option><mat-option value="true">Activos</mat-option><mat-option value="false">Inactivos</mat-option></mat-select></mat-form-field></div>
+        @if (!gruposVisibles.length) {<p class="empty">No hay grupos para mostrar.</p>} @else {<div class="group-list">@for (g of gruposVisibles; track g.grupoId) {
+          <button type="button" class="group-row" [class.selected]="selectedId === g.grupoId" [attr.aria-pressed]="selectedId === g.grupoId" (click)="select(g.grupoId)"><strong>{{g.nombre}}</strong><small>{{g.grupoPadreId === null ? 'Sin grupo padre' : path(g.grupoPadreId)}}</small><span>{{g.miembros.length}} membresías · {{!g.activo ? 'Inactivo' : g.habilitadoEnJerarquia ? 'Activo' : 'Padre inactivo'}}</span></button>
+        }</div>}
+      </section>
+      <section>
+        @if (selected; as g) {
+          <div class="detail-header"><div><span class="eyebrow">{{path(g.grupoId)}}</span><h2>{{g.nombre}}</h2></div><button mat-stroked-button type="button" (click)="editar(g)" [disabled]="busy">Editar grupo</button></div>
+          @if (g.puedeConsultarTodosClientes) {<p class="notice">Este grupo concede consulta global de clientes a sus integrantes directos.</p>}
+          @if (!g.habilitadoEnJerarquia) {<p class="notice">Este grupo o uno de sus padres está inactivo. Sus membresías no otorgan acceso mientras permanezca así.</p>}
+          <div class="subgroups"><strong>Subgrupos</strong>@for (child of subgrupos; track child.grupoId) {<button mat-stroked-button type="button" (click)="select(child.grupoId)">{{child.nombre}}</button>}<button mat-stroked-button type="button" (click)="nuevo(g.grupoId)" [disabled]="busy">Crear subgrupo</button></div>
+          <h3>Integrantes</h3><div class="fields compact"><mat-form-field appearance="outline" subscriptSizing="dynamic"><mat-label>Buscar persona</mat-label><input matInput name="buscarPersona" [(ngModel)]="buscarPersona" (ngModelChange)="tablaMiembros.reset()" placeholder="Nombre o correo"></mat-form-field></div><mat-checkbox class="check"   [(ngModel)]="incluirSubgrupos" (ngModelChange)="tablaMiembros.reset()">Mostrar también integrantes de subgrupos</mat-checkbox>
+          <app-portal-table [pagination]="tablaMiembros" [total]="miembrosVisibles.length" label="integrantes del grupo">
+            <table class="portal-data-table"><thead><tr><th scope="col">#</th><th scope="col">Representante</th><th scope="col">Grupo</th><th scope="col">Subgrupos</th><th scope="col">Estado</th><th scope="col">Acción</th></tr></thead><tbody>
+              @for (m of tablaMiembros.rows(miembrosVisibles); track m.grupoId + ':' + m.representanteId; let i = $index) {<tr><td>{{tablaMiembros.start(miembrosVisibles.length) + i}}</td><td>{{m.nombre}}<small>{{m.correoCorporativo}}</small></td><td>{{m.grupoNombre}}</td><td>{{m.incluyeDescendientes ? 'Incluidos' : 'Solo su grupo'}}</td><td>{{memberState(m)}}</td><td><button mat-stroked-button type="button" (click)="editarMiembro(m.grupoId, m)" [disabled]="busy">Editar membresía</button></td></tr>}
+              @empty {<tr><td colspan="6" class="empty-table">No hay integrantes para esta selección.</td></tr>}
+            </tbody></table>
+          </app-portal-table>
+          <div class="actions member-add-actions"><button mat-flat-button class="primary" type="button" (click)="abrirMiembro()" [disabled]="busy">Añadir integrante</button></div>
+          @if (mostrarMiembro) {<app-portal-modal [title]="'Integrante de ' + g.nombre" [busy]="busy" (closed)="cerrarMiembro()">@if (error) {<p class="error" role="alert">{{error}}</p>}<form (ngSubmit)="guardarMiembro()"><mat-form-field appearance="outline" subscriptSizing="dynamic"><mat-label>Representante</mat-label><mat-select name="persona" [(ngModel)]="miembro.representanteId" [disabled]="busy || miembro.editando" panelClass="tracking-select-panel"><mat-option [value]="0" disabled>Seleccionar persona</mat-option>@for (p of d.representantes; track p.representanteId) {<mat-option [value]="p.representanteId" [disabled]="(!p.activo && !miembro.editando) || yaPertenece(p.representanteId)">{{p.nombre}}{{p.activo ? '' : ' (usuario inactivo)'}}</mat-option>}</mat-select></mat-form-field>
+            <div class="checks"><mat-checkbox   name="mActivo" [(ngModel)]="miembro.activo" [disabled]="busy">Membresía activa</mat-checkbox><mat-checkbox   name="descendientes" [(ngModel)]="miembro.incluyeDescendientes" [disabled]="busy">Incluir carteras de subgrupos</mat-checkbox></div>
+            <p class="hint">Este alcance se aplica a esa persona. Los miembros activos de grupos ordinarios comparten las carteras del grupo; incluir subgrupos amplía ese alcance hacia abajo.</p>
+            <div class="actions"><button mat-flat-button type="submit" class="primary" [disabled]="busy || !miembro.representanteId">Guardar membresía</button>@if (miembro.editando) {<button mat-stroked-button type="button" (click)="cerrarMiembro()" [disabled]="busy">Cancelar edición</button>}</div>
+          </form></app-portal-modal>}
+        } @else {<p class="empty">Selecciona un grupo o crea el primero para añadir representantes.</p>}
+      </section>
+    </div>
+  } @else if (busy) {<p role="status">Cargando grupos…</p>}
+</div>

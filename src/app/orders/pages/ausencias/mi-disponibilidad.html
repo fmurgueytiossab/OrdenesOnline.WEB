@@ -1,0 +1,28 @@
+<div class="ausencias-page">
+  <header><div><span class="eyebrow">Mi cuenta</span><h1>Mi disponibilidad</h1><p>Registra cuándo no podrás ejecutar operaciones.</p></div></header>
+  @if (data; as d) {
+    <section class="status-card"><div><h2>{{d.nombre}}</h2><p>Tu disponibilidad depende de las ausencias vigentes. Puedes seguir accediendo a tu cuenta.</p></div><span class="badge" [class.unavailable]="!d.disponible">{{d.disponible ? 'Disponible' : 'No disponible'}}</span></section>
+    <section><h2>Registrar ausencia</h2><p>Si la ausencia comienza hoy, se inicia al registrarla. Las fechas corresponden a Lima y el día final está incluido.</p>
+      <form #form="ngForm" (ngSubmit)="guardar()">
+        <mat-radio-group name="periodo" [(ngModel)]="periodo" [disabled]="busy" aria-label="Período de ausencia"><mat-radio-button value="HOY">Solo por hoy</mat-radio-button><mat-radio-button value="FECHAS">Rango de fechas</mat-radio-button></mat-radio-group>
+        <div class="fields">
+          <mat-form-field class="motive-field" appearance="outline" subscriptSizing="dynamic"><mat-label>Motivo</mat-label><mat-select name="motivo" [(ngModel)]="motivoId" (selectionChange)="motivoCambiado()" [disabled]="busy" required panelClass="tracking-select-panel"><mat-option [value]="0" disabled>Seleccionar motivo</mat-option>@for (m of d.motivos; track m.motivoAusenciaId) {<mat-option [value]="m.motivoAusenciaId">{{m.nombre}}</mat-option>}</mat-select></mat-form-field>
+          @if (periodo === 'FECHAS') {
+            <mat-form-field appearance="outline" subscriptSizing="dynamic"><mat-label>Desde</mat-label><input matInput name="desde" [matDatepicker]="desdePicker" [(ngModel)]="desdeDate" [min]="hoyDate" [disabled]="busy" required><mat-datepicker-toggle matIconSuffix [for]="desdePicker" /><mat-datepicker #desdePicker /></mat-form-field>
+            <mat-form-field appearance="outline" subscriptSizing="dynamic"><mat-label>Hasta</mat-label><input matInput name="hasta" [matDatepicker]="hastaPicker" [(ngModel)]="hastaDate" [min]="desdeDate || hoyDate" [disabled]="busy" required><mat-datepicker-toggle matIconSuffix [for]="hastaPicker" /><mat-datepicker #hastaPicker /></mat-form-field>
+          }
+        </div>
+        @if (esOtro) {<mat-form-field appearance="outline"><mat-label>Explica el motivo de tu ausencia</mat-label><textarea matInput name="detalle" [(ngModel)]="detalle" [disabled]="busy" maxlength="500" rows="3" required></textarea><mat-hint align="end">{{detalle.length}} / 500</mat-hint></mat-form-field>}
+        <button mat-flat-button type="submit" class="primary" [disabled]="busy || !form.valid || !motivoId || !d.motivos.length || (esOtro && !detalle.trim())">Registrar ausencia</button>
+      </form>
+      @if (!d.motivos.length) {<p class="empty">No hay motivos disponibles. Solicita su revisión al administrador.</p>}
+    </section>
+    <section><h2>Mis ausencias</h2>@if (!d.ausencias.length) {<p class="empty">Todavía no tienes ausencias registradas.</p>} @else {
+      <div class="table-scroll"><table><thead><tr><th>Motivo</th><th>Desde</th><th>Último día</th><th>Estado</th><th>Acciones</th></tr></thead><tbody>@for (a of d.ausencias; track a.ausenciaId) {<tr><td>{{a.motivo}}@if (a.detalle) {<small>{{a.detalle}}</small>}</td><td>{{a.desdeUtc | date:'dd/MM/yyyy HH:mm:ss':'-0500'}}</td><td>{{ultimoDia(a.hastaUtc) | date:'dd/MM/yyyy':'-0500'}}</td><td><span class="badge" [class.unavailable]="a.estado === 'VIGENTE'">{{estado(a.estado)}}</span></td><td>@if (a.puedeCancelar) {<button mat-stroked-button type="button" (click)="confirmarId = a.ausenciaId" [disabled]="busy">Cancelar ausencia</button>}</td></tr>}</tbody></table></div>
+    }</section>
+    @if (confirmarId) {<app-portal-modal title="Cancelar ausencia" [compact]="true" [busy]="busy" (closed)="confirmarId = 0">
+      <p>¿Confirmas que deseas cancelar esta ausencia? El registro se conservará en tu historial.</p>
+      <div class="actions confirmation-actions"><button mat-stroked-button type="button" (click)="confirmarId = 0" [disabled]="busy">Volver</button><button mat-flat-button type="button" class="danger" (click)="cancelar(confirmarId)" [disabled]="busy">Confirmar cancelación</button></div>
+    </app-portal-modal>}
+  } @else if (busy) {<p role="status">Cargando disponibilidad…</p>}
+</div>

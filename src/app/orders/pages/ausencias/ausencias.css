@@ -1,0 +1,5 @@
+@import "../../../shared/representantes-ui.css";
+
+.fields .motive-field{flex:0 1 300px;width:300px;max-width:100%}
+.confirmation-actions{justify-content:flex-end;gap:20px;margin-top:24px}
+@media(max-width:650px){.fields .motive-field{flex:0 1 auto;width:100%}.confirmation-actions{gap:16px}}

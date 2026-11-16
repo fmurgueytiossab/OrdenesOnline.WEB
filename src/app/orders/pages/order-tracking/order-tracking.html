@@ -19,13 +19,6 @@
       </div>
     }
 
-    @if (actionError) {
-      <div class="demo-notice error-notice" role="alert">{{ actionError }}</div>
-    }
-    @if (actionSuccess) {
-      <div class="demo-notice success-notice" role="status">{{ actionSuccess }}</div>
-    }
-
     <div class="channel-tabs" role="tablist" aria-label="Canal de ejecución">
       <button
         type="button"
@@ -170,8 +163,10 @@
                         [disabled]="loading || updatingOrderId !== null"
                         [attr.aria-label]="'Marcar orden ' + order.id + ' como ingresada'"
                         (click)="markEntered(order)">
-                        {{ updatingOrderId === order.id ? 'Guardando…' : 'Marcar ingresado' }}
+                        {{ updatingOrderId === order.id ? 'Guardando…' : 'Marcar ingresada' }}
                       </button>
+                    } @else if (order.status === 'FIRMADO' || order.status === 'INGRESADO') {
+                      <span class="entry-status" [class.entry-waiting]="order.status === 'FIRMADO'" [class.entry-completed]="order.status === 'INGRESADO'">{{ entryStatus(order) }}</span>
                     } @else if (order.status === 'CANCELADO') {
                       <span class="no-action">Proceso finalizado</span>
                     } @else {
@@ -222,6 +217,8 @@
         <div><span>Código de cliente</span><strong>{{ selectedOrder.clientCode }}</strong></div>
         <div><span>Responsable de orden</span><strong>{{ selectedOrder.orderResponsible || 'No informado' }}</strong></div>
         <div><span>Responsable de ejecución</span><strong>{{ selectedOrder.operationResponsible || 'No informado' }}</strong></div>
+        <div><span>Seguimiento de ingreso</span><strong>{{ entryStatus(selectedOrder) }}</strong></div>
+        @if (selectedOrder.enteredAt) {<div><span>Fecha de ingreso (Lima)</span><strong>{{ selectedOrder.enteredAt | date: 'dd/MM/yyyy, HH:mm':'-0500' }}</strong></div>}
         <div><span>Modalidad referencial</span><strong>{{ selectedOrder.referenceMode || 'No informada' }}</strong></div>
         <div><span>Renta</span><strong>{{ selectedOrder.renta || 'No informada' }}</strong></div>
         <div><span>Estado</span><strong class="status" [attr.data-status]="selectedOrder.status">{{ statusLabel(selectedOrder.status) }}</strong></div>

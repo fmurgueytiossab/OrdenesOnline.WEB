@@ -42,6 +42,7 @@ export class OrderFormComponent implements OnInit {
   @Input() markets: MarketOption[] = [];
   @Input() marketControl: 'radio' | 'select' = 'radio';
   @Input() submitting = false;
+  @Input() submissionBlocked = false;
   @Input() disabled = false;
   @Input() initialValue: Partial<OrderFormValue> | null = null;
   @Input() cancelLabel = 'Volver';
@@ -157,7 +158,7 @@ export class OrderFormComponent implements OnInit {
   }
 
   submit(): void {
-    if (this.controlsDisabled || this.submitting) return;
+    if (this.controlsDisabled || this.submitting || this.submissionBlocked) return;
 
     if (!this.mercado) {
       this.showError('Debe seleccionar un mercado');

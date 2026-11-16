@@ -1,3 +1,6 @@
+import { ReglasResponsablesComponent } from './orders/pages/reglas-responsables/reglas-responsables';
+import { GruposRepresentantesComponent } from './orders/pages/grupos-representantes/grupos-representantes';
+import { MiDisponibilidadComponent } from './orders/pages/ausencias/mi-disponibilidad';
 import { Routes, UrlMatcher } from '@angular/router';
 import { AuthGuard } from './Auth/auth.guard';
 import { ChangePasswordComponent } from './ChangePassword/ChangePassword';
@@ -8,7 +11,6 @@ import { ClientPortalLayoutComponent } from './orders/layouts/client-portal-layo
 import { ClientOrdersComponent } from './orders/pages/client-orders/client-orders';
 import { OrderTrackingComponent } from './orders/pages/order-tracking/order-tracking';
 import { ProposalReviewComponent } from './orders/pages/proposal-review/proposal-review';
-import { PruebaComponent } from './prueba/prueba';
 import { RepresentantesAdminComponent, representantesAdminGuard } from './orders/pages/representantes-admin/representantes-admin';
 
 const clientLoginMatcher: UrlMatcher = (segments) =>
@@ -42,6 +44,11 @@ export const routes: Routes = [
     data: { portal: 'representantes' },
     children: [
       { path: 'ordenes', component: FormularioComponent },
+      { path: 'administracion', component: RepresentantesAdminComponent, canActivate: [representantesAdminGuard] },
+      { path: 'ausencias', component: MiDisponibilidadComponent },
+      { path: 'grupos', component: GruposRepresentantesComponent, canActivate: [representantesAdminGuard] },
+      { path: 'reglas-responsables', component: ReglasResponsablesComponent, canActivate: [representantesAdminGuard] },
+      { path: 'ausencias/registro', redirectTo: '/Representantes/administracion?tab=ausencias', pathMatch: 'full' },
       {
         path: 'cuenta/contrasena',
         component: ChangePasswordComponent,
@@ -76,6 +83,10 @@ export const routes: Routes = [
     data: { portal: 'clientes' },
     children: [
       { path: 'ordenes', component: ClientOrdersComponent },
+      { path: 'ausencias', component: MiDisponibilidadComponent },
+      { path: 'grupos', component: GruposRepresentantesComponent, canActivate: [representantesAdminGuard] },
+      { path: 'reglas-responsables', component: ReglasResponsablesComponent, canActivate: [representantesAdminGuard] },
+      { path: 'ausencias/registro', redirectTo: '/Clientes/administracion?tab=ausencias', pathMatch: 'full' },
       { path: 'seguimiento', component: OrderTrackingComponent },
       { path: 'administracion', component: RepresentantesAdminComponent, canActivate: [representantesAdminGuard] },
       {
@@ -92,6 +103,5 @@ export const routes: Routes = [
   { path: 'formulario', redirectTo: 'Representantes/ordenes', pathMatch: 'full' },
   { path: 'forgot-password', redirectTo: 'Representantes/forgot-password', pathMatch: 'full' },
   { path: 'change-password', redirectTo: 'Representantes/change-password', pathMatch: 'full' },
-  { path: 'prueba', component: PruebaComponent },
   { path: '**', redirectTo: 'Representantes' },
 ];

@@ -7,9 +7,9 @@ export interface Gestor { representanteId: number; codigoGestor: string; activo:
 export interface Grupo { grupoId: number; nombre: string; grupoPadreId: number | null; activo: boolean; puedeConsultarTodosClientes: boolean; }
 export interface Miembro { grupoId: number; representanteId: number; incluyeDescendientes: boolean; activo: boolean; }
 export interface Regla { reglaId: number; titularRepresentanteId: number; tipoRenta: string; accion: string; modoResolucion: string; activo: boolean; }
-export interface Ausencia { ausenciaId: number; representanteId: number; motivoAusenciaId: number; desdeUtc: string; hastaUtc: string; cancelada: boolean; }
+export interface Ausencia { ausenciaId: number; representanteId: number; motivoAusenciaId: number; desdeUtc: string; hastaUtc: string; cancelada: boolean; detalle?: string | null; }
 export interface Configuracion { revision: string; usuarios: Persona[]; gestores: Gestor[]; grupos: Grupo[]; miembros: Miembro[]; reglas: Regla[]; opciones: {reglaId: number; responsableRepresentanteId: number}[]; motivos: {motivoAusenciaId: number; nombre: string; activo: boolean}[]; ausencias: Ausencia[]; perfiles: {representanteId: number; tipoRenta: string; esAsesor: boolean; esOperador: boolean}[]; }
-export interface Responsable { representanteId: number; nombre: string; correoCorporativo: string; }
+export interface Responsable { representanteId: number; nombre: string; correoCorporativo: string; disponible?: boolean; motivoNoDisponible?: string | null; }
 export interface Titular { representanteId: number; nombre: string; puedeCrear: boolean; orden: Responsable[]; operacion: Responsable[]; error: string | null; }
 export interface Responsables { tipoRenta: string; revision: string; titulares: Titular[]; }
 export interface Cambio { tipo: string; revision?: string; id?: number; representanteId?: number; nombre?: string; codigoGestor?: string; grupoPadreId?: number | null; puedeConsultarTodosClientes?: boolean; activo?: boolean; incluyeDescendientes?: boolean; tipoRenta?: string; esAsesor?: boolean; esOperador?: boolean; accion?: string; modoResolucion?: string; opciones?: number[]; motivoAusenciaId?: number; desde?: string; hasta?: string; }

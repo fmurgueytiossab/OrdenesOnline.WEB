@@ -272,6 +272,8 @@
       </mat-form-field>
     </div>
 
+    <ng-content select="[proposal-responsibles]" />
+
     <div class="order-summary" aria-live="polite">
       <div class="summary-icon" aria-hidden="true">∑</div>
       <div class="summary-amount">
@@ -299,7 +301,7 @@
       }
       {{ cancelLabel }}
     </button>
-    <button mat-flat-button color="primary" class="submit-button" type="button" (click)="submit()" [disabled]="submitting || controlsDisabled">
+    <button mat-flat-button color="primary" class="submit-button" type="button" (click)="submit()" [disabled]="submitting || controlsDisabled || submissionBlocked">
       <span>{{ submitting ? 'Enviando…' : 'Enviar orden' }}</span>
       @if (!submitting) { <span aria-hidden="true">→</span> }
     </button>

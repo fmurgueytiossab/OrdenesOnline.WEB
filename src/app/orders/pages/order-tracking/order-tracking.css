@@ -659,3 +659,5 @@ td small {
   .dialog-actions button,
   .dialog-actions a { width: 100%; }
 }
+
+.entry-status{display:block;max-width:15rem;white-space:normal;font-size:.8rem;line-height:1.45;overflow-wrap:anywhere}.entry-waiting{color:#475467}.entry-completed{color:#027a48}
