@@ -1,18 +1,20 @@
 import { PortalFeedbackService } from '../../../shared/portal-feedback.service';
 import { REPRESENTANTES_UI, calendarDate, calendarIso } from '../../../shared/representantes-ui';
 import { PortalModalComponent } from '../../../shared/portal-modal';
+import { PortalTableComponent, TablePagination } from '../../../shared/portal-table';
 import { ChangeDetectorRef, Component, DestroyRef, OnInit, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { finalize } from 'rxjs';
 import { AusenciasConsulta, RegistrarMiAusencia, RepresentantesAusenciasService } from '../../../services/representantes-ausencias.service';
 
-@Component({selector: 'app-mi-disponibilidad', standalone: true, imports: [...REPRESENTANTES_UI, PortalModalComponent],
+@Component({selector: 'app-mi-disponibilidad', standalone: true, imports: [...REPRESENTANTES_UI, PortalModalComponent, PortalTableComponent],
   templateUrl: './mi-disponibilidad.html', styleUrl: './ausencias.css'})
 export class MiDisponibilidadComponent implements OnInit {
   private readonly feedback = inject(PortalFeedbackService);
   private readonly api = inject(RepresentantesAusenciasService);
   private readonly cdr = inject(ChangeDetectorRef);
   private readonly destroy = inject(DestroyRef);
+  readonly tablaAusencias = new TablePagination();
   data: AusenciasConsulta | null = null;
   busy = false; error = ''; message = ''; confirmarId = 0;
   detalle = '';
@@ -28,7 +30,7 @@ export class MiDisponibilidadComponent implements OnInit {
   reload() {
     this.busy = true; this.error = '';
     this.api.mias().pipe(takeUntilDestroyed(this.destroy), finalize(() => {this.busy = false; this.cdr.markForCheck();}))
-      .subscribe({next: data => this.data = data, error: e => this.reportError(e.error?.title ?? 'No se pudo cargar tu disponibilidad.')});
+      .subscribe({next: data => {this.data = data; this.tablaAusencias.reset();}, error: e => this.reportError(e.error?.title ?? 'No se pudo cargar tu disponibilidad.')});
   }
   guardar() {
     if (!this.data || this.busy || !this.motivoId) return;
@@ -41,7 +43,7 @@ export class MiDisponibilidadComponent implements OnInit {
     if (this.periodo === 'FECHAS') {request.desde = this.desde; request.hasta = this.hasta;}
     this.busy = true; this.error = ''; this.message = '';
     this.api.registrar(request).pipe(takeUntilDestroyed(this.destroy), finalize(() => {this.busy = false; this.cdr.markForCheck();}))
-      .subscribe({next: data => {this.data = data; this.feedback.success('Ausencia registrada. Volverás a estar disponible al finalizar el período.'); this.detalle = '';}, error: e => this.reportError(e.error?.title ?? 'No se pudo registrar la ausencia.')});
+      .subscribe({next: data => {this.data = data; this.tablaAusencias.reset(); this.feedback.success('Ausencia registrada. Volverás a estar disponible al finalizar el período.'); this.detalle = '';}, error: e => this.reportError(e.error?.title ?? 'No se pudo registrar la ausencia.')});
   }
   cancelar(id: number) {
     if (!this.data || this.busy) return;

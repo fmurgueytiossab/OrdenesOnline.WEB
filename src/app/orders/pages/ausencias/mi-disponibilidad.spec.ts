@@ -56,7 +56,7 @@ describe('Mi disponibilidad', () => {
   it('displays the inclusive last day and cancels using the current revision', () => {
     api.mias.mockReturnValue(of({...ownAbsences, disponible: false, ausencias: [{ausenciaId: 4, representanteId: 2, nombre: ownAbsences.nombre, motivo: 'Vacaciones', desdeUtc: '2026-11-11T05:00:00Z', hastaUtc: '2026-11-12T05:00:00Z', estado: 'VIGENTE', puedeCancelar: true, modificadoPorId: 2, fechaModificacionUtc: '2026-11-11T14:00:00Z'}]}));
     const fixture = TestBed.createComponent(MiDisponibilidadComponent); fixture.detectChanges();
-    const cells = [...fixture.nativeElement.querySelectorAll('tbody td')].map((x: Element) => x.textContent?.trim()); expect(cells[1]).toBe('11/11/2026 00:00:00'); expect(cells[2]).toBe('11/11/2026');
+    const cells = [...fixture.nativeElement.querySelectorAll('tbody td')].map((x: Element) => x.textContent?.trim()); expect(cells[2]).toBe('11/11/2026 00:00:00'); expect(cells[3]).toBe('11/11/2026');
     fixture.componentInstance.cancelar(4); expect(api.cancelar).toHaveBeenCalledWith(4, 'r1'); fixture.destroy();
   });
 });

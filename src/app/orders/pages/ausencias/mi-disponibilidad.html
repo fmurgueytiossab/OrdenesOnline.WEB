@@ -17,9 +17,43 @@
       </form>
       @if (!d.motivos.length) {<p class="empty">No hay motivos disponibles. Solicita su revisión al administrador.</p>}
     </section>
-    <section><h2>Mis ausencias</h2>@if (!d.ausencias.length) {<p class="empty">Todavía no tienes ausencias registradas.</p>} @else {
-      <div class="table-scroll"><table><thead><tr><th>Motivo</th><th>Desde</th><th>Último día</th><th>Estado</th><th>Acciones</th></tr></thead><tbody>@for (a of d.ausencias; track a.ausenciaId) {<tr><td>{{a.motivo}}@if (a.detalle) {<small>{{a.detalle}}</small>}</td><td>{{a.desdeUtc | date:'dd/MM/yyyy HH:mm:ss':'-0500'}}</td><td>{{ultimoDia(a.hastaUtc) | date:'dd/MM/yyyy':'-0500'}}</td><td><span class="badge" [class.unavailable]="a.estado === 'VIGENTE'">{{estado(a.estado)}}</span></td><td>@if (a.puedeCancelar) {<button mat-stroked-button type="button" (click)="confirmarId = a.ausenciaId" [disabled]="busy">Cancelar ausencia</button>}</td></tr>}</tbody></table></div>
-    }</section>
+    <section aria-labelledby="mis-ausencias-title">
+      <h2 id="mis-ausencias-title">Mis ausencias</h2>
+      <app-portal-table [pagination]="tablaAusencias" [total]="d.ausencias.length" label="mis ausencias">
+        <table class="portal-data-table">
+          <thead>
+            <tr>
+              <th scope="col">#</th>
+              <th scope="col">Motivo</th>
+              <th scope="col">Desde</th>
+              <th scope="col">Último día</th>
+              <th scope="col">Estado</th>
+              <th scope="col">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (a of tablaAusencias.rows(d.ausencias); track a.ausenciaId; let i = $index) {
+              <tr>
+                <td>{{tablaAusencias.start(d.ausencias.length) + i}}</td>
+                <td>{{a.motivo}}@if (a.detalle) {<small>{{a.detalle}}</small>}</td>
+                <td>{{a.desdeUtc | date:'dd/MM/yyyy HH:mm:ss':'-0500'}}</td>
+                <td>{{ultimoDia(a.hastaUtc) | date:'dd/MM/yyyy':'-0500'}}</td>
+                <td><span class="badge" [class.unavailable]="a.estado === 'VIGENTE'">{{estado(a.estado)}}</span></td>
+                <td>
+                  @if (a.puedeCancelar) {
+                    <button mat-stroked-button type="button" (click)="confirmarId = a.ausenciaId" [disabled]="busy">Cancelar ausencia</button>
+                  } @else {
+                    <span aria-label="Sin acciones disponibles">—</span>
+                  }
+                </td>
+              </tr>
+            } @empty {
+              <tr><td colspan="6" class="empty-table">Todavía no tienes ausencias registradas.</td></tr>
+            }
+          </tbody>
+        </table>
+      </app-portal-table>
+    </section>
     @if (confirmarId) {<app-portal-modal title="Cancelar ausencia" [compact]="true" [busy]="busy" (closed)="confirmarId = 0">
       <p>¿Confirmas que deseas cancelar esta ausencia? El registro se conservará en tu historial.</p>
       <div class="actions confirmation-actions"><button mat-stroked-button type="button" (click)="confirmarId = 0" [disabled]="busy">Volver</button><button mat-flat-button type="button" class="danger" (click)="cancelar(confirmarId)" [disabled]="busy">Confirmar cancelación</button></div>
