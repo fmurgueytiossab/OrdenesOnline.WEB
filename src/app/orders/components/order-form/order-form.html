@@ -295,7 +295,7 @@
   </section>
 
   <footer class="actions-row">
-    <button mat-button class="back-button" type="button" (click)="cancelled.emit()" [disabled]="submitting || controlsDisabled">
+    <button mat-stroked-button class="back-button" type="button" (click)="cancelled.emit()" [disabled]="submitting || controlsDisabled">
       @if (showCancelArrow) {
         <span aria-hidden="true">←</span>
       }

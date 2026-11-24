@@ -12,6 +12,11 @@ const config: ReglasConsulta = {revision: 'r1', representantes: [owner, ana, lui
   {reglaId: 2, titularRepresentanteId: 2, titular: 'Titular', tipoRenta: 'RF', accion: 'ENVIO_OPERACION', modoResolucion: 'LISTA', activo: true, opciones: [ana, luis], modificadoPorId: 2, modificadoPor: 'Admin', fechaModificacionUtc: '2026-11-11T14:00:00Z'},
   {reglaId: 3, titularRepresentanteId: 2, titular: 'Titular', tipoRenta: 'RF', accion: 'ENVIO_OPERACION', modoResolucion: 'LISTA', activo: false, opciones: [ana], modificadoPorId: 2, modificadoPor: 'Admin', fechaModificacionUtc: '2026-11-10T14:00:00Z'},
 ]};
+function abrirTitular(fixture: { nativeElement: HTMLElement; detectChanges: () => void }) {
+  fixture.nativeElement.querySelector<HTMLButtonElement>('.holder-toggle')!.click();
+  fixture.detectChanges();
+}
+
 describe('Reglas de responsables', () => {
   const api = {consultar: vi.fn(), guardar: vi.fn()};
   beforeEach(() => {vi.clearAllMocks(); api.consultar.mockReturnValue(of(config)); api.guardar.mockReturnValue(of({...config, revision: 'r2'})); TestBed.configureTestingModule({imports: [ReglasResponsablesComponent], providers: [{provide: ReglasResponsablesService, useValue: api}]});});
@@ -20,11 +25,33 @@ describe('Reglas de responsables', () => {
     const header = fixture.nativeElement.querySelector('header') as HTMLElement;
     expect(header.textContent).toContain('Nueva regla'); expect(header.textContent).not.toContain('Actualizar');
     expect(fixture.nativeElement.querySelector('mat-checkbox')).not.toBeNull();
+    abrirTitular(fixture);
     const edit = [...fixture.nativeElement.querySelectorAll('button')].find((b: HTMLElement) => b.textContent?.trim() === 'Editar regla') as HTMLButtonElement;
     edit.click(); fixture.detectChanges();
     const modal = fixture.nativeElement.querySelector('[role="dialog"]') as HTMLElement;
     expect(modal).not.toBeNull(); expect(modal.querySelectorAll('mat-select').length).toBe(1); expect(modal.querySelector('.rule-context')?.textContent).toContain('Titular'); expect(modal.querySelector('.rule-key-fields')).toBeNull(); expect(modal.querySelector('select')).toBeNull(); fixture.destroy();
   });
+  it('uses the shared table and expands one holder into the four RF and RV combinations', () => {
+    const fixture = TestBed.createComponent(ReglasResponsablesComponent);
+    fixture.detectChanges();
+    const page = fixture.nativeElement as HTMLElement;
+    expect(page.querySelectorAll('app-portal-table .holder-row')).toHaveLength(1);
+    expect(page.querySelector('.holder-detail')).toBeNull();
+
+    abrirTitular(fixture);
+    expect(page.querySelector('.holder-toggle')?.getAttribute('aria-expanded')).toBe('true');
+    const labels = [...page.querySelectorAll('.rule-combination')].map(element => element.textContent?.trim());
+    expect(labels).toEqual([
+      'RF · Ejecución de operación', 'RF · Envío de orden',
+      'RV · Ejecución de operación', 'RV · Envío de orden',
+    ]);
+    expect(page.querySelectorAll('.holder-detail td[colspan="6"]')).toHaveLength(2);
+
+    abrirTitular(fixture);
+    expect(page.querySelector('.holder-detail')).toBeNull();
+    fixture.destroy();
+  });
+
   it('changes a list to the owner and clears the options in the submitted rule', () => {
     const fixture = TestBed.createComponent(ReglasResponsablesComponent); fixture.detectChanges(); const component = fixture.componentInstance;
     component.editar(config.reglas[1]); component.form.modo = 'TITULAR'; component.cambiarModo(); component.guardar();
@@ -44,6 +71,7 @@ describe('Reglas de responsables', () => {
     const fixture = TestBed.createComponent(ReglasResponsablesComponent); fixture.detectChanges(); const component = fixture.componentInstance;
     expect(component.reglasFiltradas).toHaveLength(2); component.accionFiltro = 'ENVIO_OPERACION'; expect(component.reglasFiltradas).toHaveLength(1);
     component.incluirHistorial = true; expect(component.reglasFiltradas).toHaveLength(2); fixture.changeDetectorRef.markForCheck(); fixture.detectChanges();
+    abrirTitular(fixture);
     expect(fixture.nativeElement.textContent).toContain('Solo consulta'); fixture.destroy();
   });
   it('refreshes the open editor along with the revision so old options are not saved over a newer rule', () => {
@@ -58,16 +86,27 @@ describe('Reglas de responsables', () => {
   });
   it('uses a read-only dropdown for multiple people and keeps editor actions in cancel/save order', () => {
     const fixture = TestBed.createComponent(ReglasResponsablesComponent); fixture.detectChanges();
-    expect(fixture.nativeElement.querySelectorAll('app-responsible-list button')).toHaveLength(1);
+    abrirTitular(fixture);
+    const page = fixture.nativeElement as HTMLElement;
+    const [trigger] = page.querySelectorAll<HTMLButtonElement>('app-responsible-list button');
+    expect(page.querySelectorAll('app-responsible-list button')).toHaveLength(1);
+    trigger.click();
+    fixture.detectChanges();
+    const panel = document.getElementById(trigger.getAttribute('aria-controls')!)!;
+    expect(panel.querySelectorAll('li')).toHaveLength(2);
+    expect(panel.querySelectorAll('button')).toHaveLength(0);
+    panel.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    fixture.detectChanges();
+    expect(trigger.getAttribute('aria-expanded')).toBe('false');
     const c = fixture.componentInstance; c.editar(config.reglas[1]); fixture.changeDetectorRef.markForCheck(); fixture.detectChanges();
     const buttons = [...fixture.nativeElement.querySelectorAll('.rule-editor-actions button')].map((b: HTMLElement) => b.textContent?.trim()); expect(buttons).toEqual(['Cancelar edición', 'Guardar cambios']); fixture.destroy();
   });
 
   it('clears every filter including history and resets pagination', () => {
     const fixture = TestBed.createComponent(ReglasResponsablesComponent); fixture.detectChanges(); const c = fixture.componentInstance;
-    c.titularFiltro = 2; c.rentaFiltro = 'RV'; c.accionFiltro = 'ENVIO_ORDEN'; c.busqueda = 'Ana'; c.incluirHistorial = true; c.pagina = 3;
+    c.titularFiltro = 2; c.rentaFiltro = 'RV'; c.accionFiltro = 'ENVIO_ORDEN'; c.busqueda = 'Ana'; c.incluirHistorial = true; c.tablaTitulares.page = 3;
     const clear = [...fixture.nativeElement.querySelectorAll('button')].find((b: HTMLElement) => b.textContent?.trim() === 'Limpiar filtros') as HTMLButtonElement;
-    clear.click(); fixture.detectChanges(); expect([c.titularFiltro,c.rentaFiltro,c.accionFiltro,c.busqueda,c.incluirHistorial,c.pagina]).toEqual([0,'','','',false,1]);
+    clear.click(); fixture.detectChanges(); expect([c.titularFiltro,c.rentaFiltro,c.accionFiltro,c.busqueda,c.incluirHistorial,c.tablaTitulares.page]).toEqual([0,'','','',false,1]);
     expect(c.reglasFiltradas).toHaveLength(2); expect(api.guardar).not.toHaveBeenCalled(); fixture.destroy();
   });
   it('opens a creation form and creates a missing rent/action combination', () => {

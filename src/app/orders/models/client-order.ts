@@ -19,12 +19,15 @@ export interface ClientOrder {
   price: number | null;
   status: ClientOrderStatus;
   canMarkEntered?: boolean;
+  canCancel?: boolean;
   creatorId?: number | null;
+  creatorName?: string | null;
   ownerId?: number | null;
   operationResponsibleId?: number | null;
   enteredById?: number | null;
   enteredByName?: string | null;
   enteredAt?: string | null;
+  canceledByName?: string | null;
   orderResponsible?: string | null;
   operationResponsible?: string | null;
   referenceMode?: string | null;
@@ -47,12 +50,16 @@ export interface TrackingItemResponse {
   estado: string;
   mercado: string;
   puedeMarcarIngresado?: boolean;
+  puedeCancelar?: boolean;
   creadoPorRepresentanteId?: number | null;
+  nombreCreador?: string | null;
   titularRepresentanteId?: number | null;
+  responsableOrdenRepresentanteId?: number | null;
   responsableOperacionRepresentanteId?: number | null;
   ingresadoPorRepresentanteId?: number | null;
   nombreIngresadoPor?: string | null;
   fechaIngresoUtc?: string | null;
+  nombreCanceladoPor?: string | null;
   nombreResponsableOrden?: string | null;
   nombreResponsableOperacion?: string | null;
   modalidadReferencia?: string | null;
@@ -62,6 +69,11 @@ export interface TrackingItemResponse {
 export interface MarkOrderEnteredResponse {
   propuestaId: number;
   estado: 'INGRESADO';
+}
+
+export interface CancelOrderResponse {
+  propuestaId: number;
+  estado: 'CANCELADO';
 }
 
 export interface TrackingPageResponse {

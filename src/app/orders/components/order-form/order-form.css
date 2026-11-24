@@ -247,20 +247,6 @@
   min-height: 2.55rem;
 }
 
-:host ::ng-deep .enhanced-select-field .mat-mdc-select-arrow-wrapper {
-  width: 1.9rem;
-  height: 1.9rem;
-  display: grid;
-  place-items: center;
-  background: #f2f4f7;
-  border-radius: 0.5rem;
-}
-
-:host ::ng-deep .enhanced-select-field.mat-focused .mat-mdc-select-arrow-wrapper {
-  color: #1f5eff;
-  background: #eef4ff;
-}
-
 .currency-field input { color: #475467; font-weight: 700; }
 
 .amount-field input {
@@ -336,7 +322,15 @@
 
 .back-button,
 .submit-button { min-height: 2.75rem; border-radius: 0.7rem !important; }
-.back-button { color: #475467 !important; }
+.back-button {
+  --mat-button-outlined-label-text-color: #1747c9;
+  --mat-button-outlined-outline-color: #c7d7fe;
+  --mat-button-outlined-label-text-weight: 750;
+  padding-inline: 1rem;
+}
+
+.back-button:not(:disabled) { background: #eef4ff; }
+.back-button:hover:not(:disabled) { background: #dce7ff; }
 .back-button span,
 .submit-button span { display: inline-block; margin: 0 0.18rem; }
 .submit-button { min-width: 10rem; box-shadow: 0 0.5rem 1rem rgba(31, 94, 255, 0.2); }

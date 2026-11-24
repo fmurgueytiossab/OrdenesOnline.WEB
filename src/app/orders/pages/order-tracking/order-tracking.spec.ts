@@ -27,7 +27,12 @@ describe('OrderTrackingComponent', () => {
       return of({ propuestaId: id, estado: 'INGRESADO' });
     });
     const loadOrders = vi.fn().mockReturnValue(of([]));
-    const tracking = { orders, markEntered, loadOrders, lastUpdatedAt: () => null };
+    const cancelOrder = vi.fn().mockImplementation((id: number) => {
+      orders.update(items => items.map(order => order.id === id
+        ? { ...order, status: 'CANCELADO', canMarkEntered: false, canceledByName: 'Lorena' } : order));
+      return of({ propuestaId: id, estado: 'CANCELADO' });
+    });
+    const tracking = { orders, markEntered, cancelOrder, loadOrders, lastUpdatedAt: () => null };
     return { orders, markEntered, loadOrders, tracking, navigate };
   }
 
@@ -50,6 +55,7 @@ describe('OrderTrackingComponent', () => {
       {...orders()[0], id: 1, status: 'FIRMADO', operationResponsible: 'Miguel', canMarkEntered: false},
       {...orders()[0], id: 2, status: 'FIRMADO', operationResponsible: 'Miguel', canMarkEntered: true},
       {...orders()[0], id: 3, status: 'INGRESADO', operationResponsible: 'Miguel', canMarkEntered: false,
+        creatorName: 'Fernando', orderResponsible: 'Lorena',
         enteredByName: 'Miguel', enteredAt: '2026-11-16T17:20:00Z'},
     ]);
     await TestBed.configureTestingModule({imports: [OrderTrackingComponent],providers: [
@@ -60,14 +66,111 @@ describe('OrderTrackingComponent', () => {
     const fixture=TestBed.createComponent(OrderTrackingComponent);fixture.detectChanges();
     const rows=[...fixture.nativeElement.querySelectorAll('tbody tr')] as HTMLElement[];
     const waiting=rows.find(row=>row.textContent?.includes('Esperando ingreso por Miguel'))!;
-    expect(waiting.querySelector('.enter-button')).toBeNull();
-    expect(fixture.nativeElement.querySelectorAll('.enter-button')).toHaveLength(1);
-    expect(fixture.nativeElement.textContent).toContain('Ingresada por Miguel');
+    expect(waiting.querySelector('.order-actions-dropdown .portal-dropdown-trigger')).toBeNull();
+    expect(waiting.querySelector('[data-label="Estado"] .status-detail')?.textContent)
+      .toContain('Esperando ingreso por Miguel');
+    expect(fixture.nativeElement.querySelectorAll('.order-actions-dropdown .portal-dropdown-trigger')).toHaveLength(1);
+    expect(fixture.nativeElement.textContent).toContain('Ingresado por Miguel');
     fixture.componentInstance.markEntered(orders()[0]);expect(tracking.markEntered).not.toHaveBeenCalled();
     const enteredRow=fixture.nativeElement.querySelector('[data-status="INGRESADO"]').closest('tr');
     enteredRow.querySelector('button').click();await fixture.whenStable();
-    expect(fixture.nativeElement.querySelector('.dialog').textContent).toContain('Ingresada por Miguel');
-    expect(fixture.nativeElement.querySelector('.dialog').textContent).toContain('16/11/2026, 12:20');
+    const detail = fixture.nativeElement.querySelector('app-portal-modal [role="dialog"]') as HTMLElement;
+    const roles = new Map(Array.from(detail.querySelectorAll('#detail-roles-heading + dl > div'), field => [
+      field.querySelector('dt')?.textContent?.trim(),
+      field.querySelector('dd')?.textContent?.trim(),
+    ]));
+    expect(roles.get('Creada por')).toBe('Fernando');
+    expect(roles.get('Responsable del envío a firma')).toBe('Lorena');
+    expect(roles.get('Responsable de ejecución e ingreso')).toBe('Miguel');
+    expect(roles.get('Ingresada por')).toContain('Miguel');
+    expect(detail.querySelector('time')?.textContent).toContain('16/11/2026, 12:20');
+    expect(detail.textContent).toContain('Cantidad propuesta');
+    expect(detail.textContent).not.toMatch(/Cantidad (ejecutada|anulada|pendiente)/);
+    fixture.destroy();
+  });
+
+  it('opens the action panel outside the table and asks for confirmation before canceling', async () => {
+    const { orders, tracking } = createState();
+    orders.update(([allowed, entered, unauthorized]) => [
+      { ...allowed, status: 'FIRMADO', canMarkEntered: true, canCancel: true },
+      { ...entered, status: 'INGRESADO', canCancel: true, enteredByName: 'Miguel',
+        enteredById: 3, enteredAt: '2026-11-24T15:00:00Z' },
+      { ...unauthorized, status: 'FIRMADO', canCancel: false },
+    ]);
+    await TestBed.configureTestingModule({imports: [OrderTrackingComponent], providers: [
+      {provide: ClientOrderTrackingService, useValue: tracking},
+      {provide: ActivatedRoute, useValue: {snapshot: {queryParamMap: convertToParamMap({})}}},
+      {provide: Router, useValue: {navigate: vi.fn().mockResolvedValue(true)}},
+    ]}).compileComponents();
+    const fixture = TestBed.createComponent(OrderTrackingComponent);
+    fixture.detectChanges();
+    const page = fixture.nativeElement as HTMLElement;
+    expect(page.querySelector('input[name="orderNumber"]')?.getAttribute('placeholder')).toBe('Ej. 1654');
+    const filterActions = page.querySelector('.filter-actions')!;
+    expect(filterActions.children[0].textContent).toContain('Buscar');
+    expect(filterActions.children[1].classList.contains('filter-action-divider')).toBe(true);
+    expect(filterActions.children[2].textContent).toContain('Limpiar filtros');
+    expect(fixture.componentInstance.statuses.map(([status]) => status)).toEqual([
+      'PENDIENTE', 'ENVIADO', 'FIRMADO', 'INGRESADO', 'CANCELADO',
+    ]);
+    const signedTrigger = page.querySelector<HTMLButtonElement>('[aria-label="Acciones de la orden #1"]')!;
+    const enteredTrigger = page.querySelector<HTMLButtonElement>('[aria-label="Acciones de la orden #2"]')!;
+    expect(page.querySelectorAll('td[data-label="Acción"] app-portal-dropdown')).toHaveLength(2);
+    expect(signedTrigger.getAttribute('aria-expanded')).toBe('false');
+    signedTrigger.click();
+    fixture.detectChanges();
+    const signedMenu = document.getElementById(signedTrigger.getAttribute('aria-controls')!)!;
+    expect(signedMenu.closest('tr')).toBeNull();
+    const signedActions = Array.from(signedMenu.querySelectorAll('button'), button => button.textContent?.trim());
+    expect(signedActions).toEqual(['Marcar ingresada', 'Cancelar orden']);
+    const entryAction = signedMenu.querySelector('button')!;
+    entryAction.focus();
+    entryAction.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    fixture.detectChanges();
+    expect(signedTrigger.getAttribute('aria-expanded')).toBe('false');
+    expect(document.activeElement).toBe(signedTrigger);
+    expect(page.querySelector('[aria-label="Acciones de la orden #3"]')).toBeNull();
+    fixture.componentInstance.requestCancellation(orders().find(order => order.id === 3)!);
+    fixture.detectChanges();
+    expect(page.querySelector('.confirm-cancellation')).toBeNull();
+    fixture.componentInstance.loading = true;
+    fixture.changeDetectorRef.markForCheck();
+    fixture.detectChanges();
+    enteredTrigger.click();
+    fixture.detectChanges();
+    expect(enteredTrigger.getAttribute('aria-expanded')).toBe('true');
+    const enteredMenu = document.getElementById(enteredTrigger.getAttribute('aria-controls')!)!;
+    const [cancelAction] = enteredMenu.querySelectorAll('button');
+    expect(enteredMenu.querySelectorAll('button')).toHaveLength(1);
+    expect(cancelAction.textContent?.trim()).toBe('Cancelar orden');
+    expect(cancelAction.disabled).toBe(false);
+    cancelAction.click();
+    fixture.detectChanges();
+    expect(enteredTrigger.getAttribute('aria-expanded')).toBe('false');
+    expect(page.textContent).toContain('El ingreso original se conserva');
+    fixture.componentInstance.loading = false;
+    fixture.changeDetectorRef.markForCheck();
+    fixture.detectChanges();
+    expect(tracking.cancelOrder).not.toHaveBeenCalled();
+    page.querySelector<HTMLButtonElement>('.confirm-cancellation')!.click();
+    fixture.detectChanges();
+    expect(tracking.cancelOrder).toHaveBeenCalledExactlyOnceWith(2);
+    const canceledRow = page.querySelector('[data-status="CANCELADO"]')!.closest('tr')!;
+    expect(canceledRow.querySelector('[data-label="Estado"] .status-detail')?.textContent)
+      .toBe('Cancelado por Lorena');
+    expect(canceledRow.textContent).not.toContain('Ingresado por Miguel');
+    expect(canceledRow.querySelector('[data-label="Acción"]')?.textContent?.trim()).toBe('');
+    expect(page.querySelector('[aria-label="Acciones de la orden #2"]')).toBeNull();
+    fixture.componentInstance.requestCancellation(orders().find(order => order.id === 2)!);
+    expect(fixture.componentInstance.orderToCancel).toBeNull();
+    expect(tracking.cancelOrder).toHaveBeenCalledOnce();
+    canceledRow.querySelector<HTMLButtonElement>('.order-link')!.click();
+    await fixture.whenStable();
+    const roles = page.querySelector('#detail-roles-heading + dl')!;
+    expect(roles.textContent).toContain('Cancelada por');
+    expect(roles.textContent).toContain('Lorena');
+    expect(roles.textContent).toContain('Ingresada por');
+    expect(roles.textContent).toContain('Miguel');
     fixture.destroy();
   });
 
@@ -163,14 +266,14 @@ describe('OrderTrackingComponent', () => {
     expect(loadOrders).toHaveBeenCalledOnce();
   });
 
-  it('renders the action only for signed orders with permission', async () => {
+  it('offers entry only for signed orders with permission and reenables it after a failure', async () => {
     const { orders, tracking } = createState();
     orders.set([
       { ...orders()[0], status: 'ENVIADO', canMarkEntered: false },
       { ...orders()[1], status: 'FIRMADO', canMarkEntered: true },
       { ...orders()[2], status: 'FIRMADO', canMarkEntered: false },
       { ...orders()[3], status: 'INGRESADO', canMarkEntered: false },
-      { ...orders()[0], id: 5, status: 'CANCELADO', canMarkEntered: false },
+      { ...orders()[0], id: 5, status: 'CANCELADO', canMarkEntered: false, canCancel: true },
     ]);
     await TestBed.configureTestingModule({
       imports: [OrderTrackingComponent],
@@ -183,24 +286,39 @@ describe('OrderTrackingComponent', () => {
     const fixture = TestBed.createComponent(OrderTrackingComponent);
     fixture.detectChanges();
     expect(fixture.componentInstance.statuses.map(([status]) => status)).not.toContain('ACEPTADO');
-    const buttons = fixture.nativeElement.querySelectorAll('.enter-button');
-    expect(buttons.length).toBe(1);
-    expect(buttons[0].getAttribute('aria-label')).toContain('2');
+    const page = fixture.nativeElement as HTMLElement;
+    const [trigger] = page.querySelectorAll<HTMLElement>('.order-actions-dropdown .portal-dropdown-trigger');
+    expect(page.querySelectorAll('.order-actions-dropdown .portal-dropdown-trigger')).toHaveLength(1);
+    expect(trigger.getAttribute('aria-label')).toContain('#2');
+    trigger.click();
+    fixture.detectChanges();
+    const menu = document.getElementById(trigger.getAttribute('aria-controls')!)!;
+    const [entryOption] = menu.querySelectorAll('button');
+    expect(menu.querySelectorAll('button')).toHaveLength(1);
+    expect(entryOption.textContent?.trim()).toBe('Marcar ingresada');
     const cancelledRow = fixture.nativeElement.querySelector('[data-status="CANCELADO"]').closest('tr');
     expect(cancelledRow.querySelector('.status').textContent).toContain('Cancelado');
-    expect(cancelledRow.querySelector('[data-label="Acción"]').textContent).toContain('Proceso finalizado');
+    expect(cancelledRow.querySelector('.status-detail')).toBeNull();
+    expect(cancelledRow.querySelector('[data-label="Acción"] button')).toBeNull();
     expect(cancelledRow.querySelector('button')).toBeTruthy(); // Conserva el acceso al detalle.
-    expect(cancelledRow.querySelector('.enter-button')).toBeNull();
     const response = new Subject();
     tracking.markEntered.mockReturnValue(response);
-    buttons[0].click();
+    entryOption.click();
     await fixture.whenStable();
-    expect(buttons[0].disabled).toBe(true);
+    expect(tracking.markEntered).toHaveBeenCalledExactlyOnceWith(2);
+    expect(trigger.getAttribute('aria-expanded')).toBe('false');
+    expect(trigger.textContent?.trim()).toBe('Guardando…');
+    trigger.click();
+    fixture.changeDetectorRef.markForCheck();
+    fixture.detectChanges();
+    const reopenedMenu = document.getElementById(trigger.getAttribute('aria-controls')!)!;
+    const currentOption = reopenedMenu.querySelector('button')!;
+    expect(currentOption.disabled).toBe(true);
     response.error({ status: 500, error: { detail: 'No se pudo guardar.' } });
     await fixture.whenStable();
     expect(feedback.error).toHaveBeenCalledWith('No se pudo guardar.');
     expect(fixture.nativeElement.querySelector('.error-notice')).toBeNull();
-    expect(buttons[0].disabled).toBe(false);
+    expect(currentOption.disabled).toBe(false);
     fixture.destroy();
   });
 });

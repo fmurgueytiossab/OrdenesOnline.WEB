@@ -37,11 +37,67 @@
       <mat-form-field appearance="outline" subscriptSizing="dynamic"><mat-label>Acción</mat-label><mat-select name="accionFiltro" [(ngModel)]="accionFiltro" (ngModelChange)="filtrar()" panelClass="tracking-select-panel"><mat-option value="">Todas</mat-option><mat-option value="ENVIO_ORDEN">Envío de orden</mat-option><mat-option value="ENVIO_OPERACION">Ejecución de operación</mat-option></mat-select></mat-form-field>
       <mat-form-field appearance="outline" subscriptSizing="dynamic"><mat-label>Buscar</mat-label><input matInput name="buscarRegla" [(ngModel)]="busqueda" (ngModelChange)="filtrar()" placeholder="ID, titular o responsable"></mat-form-field>
     </div><div class="rules-filter-actions"><mat-checkbox class="check" [(ngModel)]="incluirHistorial" (ngModelChange)="filtrar()">Incluir versiones anteriores e inactivas</mat-checkbox><button mat-stroked-button type="button" (click)="limpiarFiltros()">Limpiar filtros</button></div>
-      @if (!reglasFiltradas.length) {<p class="empty">No hay reglas para los filtros seleccionados.</p>} @else {
-        <div class="table-scroll"><table><thead><tr><th scope="col">ID</th><th scope="col">Titular</th><th scope="col">Renta / acción</th><th scope="col">Resolución</th><th scope="col">Responsables</th><th scope="col">Estado</th><th scope="col">Último cambio</th><th scope="col">Acción</th></tr></thead><tbody>
-          @for (r of reglasPagina; track r.reglaId) {<tr><td>#{{r.reglaId}}</td><td>{{r.titular}}</td><td>{{r.tipoRenta}}<small>{{accionNombre(r.accion)}}</small></td><td>{{r.modoResolucion === 'TITULAR' ? 'El mismo titular' : 'Lista'}}</td><td><app-responsible-list [names]="responsablesDe(r)" /></td><td><span class="badge" [class.inactive]="!r.activo">{{r.activo ? 'Vigente' : 'Histórica / inactiva'}}</span></td><td>{{r.modificadoPor}}<small>{{r.fechaModificacionUtc | date:'dd/MM/yyyy HH:mm':'-0500'}}</small></td><td>@if (r.activo) {<button mat-stroked-button type="button" (click)="editar(r)" [disabled]="busy">Editar regla</button>} @else {<span class="hint">Solo consulta</span>}</td></tr>}
-        </tbody></table></div><div class="pagination"><span>{{reglasFiltradas.length}} reglas · Página {{pagina}} de {{paginas}}</span><div class="actions"><button mat-stroked-button type="button" (click)="pagina = pagina - 1" [disabled]="pagina <= 1">Anterior</button><button mat-stroked-button type="button" (click)="pagina = pagina + 1" [disabled]="pagina >= paginas">Siguiente</button></div></div>
-      }
+      @let titulares = titularesFiltrados;
+      <app-portal-table [pagination]="tablaTitulares" [total]="titulares.length" label="titulares con reglas">
+        <table class="portal-data-table holders-table">
+          <thead>
+            <tr><th scope="col" class="holder-number">#</th><th scope="col">Titular</th><th scope="col" class="holder-count">Reglas</th></tr>
+          </thead>
+          <tbody>
+            @for (grupo of tablaTitulares.rows(titulares); track grupo.titularId; let i = $index) {
+              @let abierto = titularAbierto === grupo.titularId;
+              <tr class="holder-row" [class.holder-open]="abierto">
+                <td>{{tablaTitulares.start(titulares.length) + i}}</td>
+                <td>
+                  <button type="button" class="holder-toggle" (click)="alternarTitular(grupo.titularId)"
+                    [attr.aria-expanded]="abierto" [attr.aria-controls]="abierto ? 'reglas-titular-' + grupo.titularId : null">
+                    <span class="holder-chevron" aria-hidden="true"></span><span>{{grupo.nombre}}</span>
+                  </button>
+                </td>
+                <td>{{grupo.reglas.length}}</td>
+              </tr>
+              @if (abierto) {
+                <tr class="holder-detail">
+                  <td colspan="3">
+                    <div class="rule-breakdown" [id]="'reglas-titular-' + grupo.titularId" role="region"
+                      [attr.aria-label]="'Reglas de ' + grupo.nombre" tabindex="0">
+                      <table [attr.aria-label]="'Combinaciones de ' + grupo.nombre">
+                        <thead>
+                          <tr><th scope="col">Renta / acción</th><th scope="col">ID</th><th scope="col">Resolución</th><th scope="col">Responsables</th><th scope="col">Estado</th><th scope="col">Último cambio</th><th scope="col">Acción</th></tr>
+                        </thead>
+                        @for (combinacion of combinacionesDe(grupo); track combinacion.renta + combinacion.accion) {
+                          <tbody>
+                            @for (r of combinacion.reglas; track r.reglaId; let first = $first) {
+                              <tr>
+                                @if (first) {
+                                  <th class="rule-combination" scope="rowgroup" [attr.rowspan]="combinacion.reglas.length">{{combinacion.renta}} · {{accionNombre(combinacion.accion)}}</th>
+                                }
+                                <td>#{{r.reglaId}}</td>
+                                <td>{{r.modoResolucion === 'TITULAR' ? 'El mismo titular' : 'Lista'}}</td>
+                                <td>@if (r.modoResolucion === 'LISTA') {<app-responsible-list [names]="responsablesDe(r)" />} @else {—}</td>
+                                <td><span class="badge" [class.inactive]="!r.activo">{{r.activo ? 'Vigente' : 'Histórica / inactiva'}}</span></td>
+                                <td>{{r.modificadoPor}}<small>{{r.fechaModificacionUtc | date:'dd/MM/yyyy HH:mm':'-0500'}}</small></td>
+                                <td>@if (r.activo) {<button mat-stroked-button type="button" (click)="editar(r)" [disabled]="busy">Editar regla</button>} @else {<span class="hint">Solo consulta</span>}</td>
+                              </tr>
+                            } @empty {
+                              <tr>
+                                <th class="rule-combination" scope="row">{{combinacion.renta}} · {{accionNombre(combinacion.accion)}}</th>
+                                <td colspan="6" class="hint">Sin regla configurada</td>
+                              </tr>
+                            }
+                          </tbody>
+                        }
+                      </table>
+                    </div>
+                  </td>
+                </tr>
+              }
+            } @empty {
+              <tr><td colspan="3" class="empty-table">No hay reglas para los filtros seleccionados.</td></tr>
+            }
+          </tbody>
+        </table>
+      </app-portal-table>
     </section>
   } @else if (busy) {<p role="status">Cargando reglas…</p>}
 </div>

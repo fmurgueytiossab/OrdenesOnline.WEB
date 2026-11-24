@@ -97,27 +97,18 @@
             } @else if (client.phones.length === 1) {
               <span class="single-phone">{{ client.phones[0] }}</span>
             } @else {
-              <button
-                type="button"
-                class="readonly-disclosure"
-                [matMenuTriggerFor]="phoneMenu"
-                [disabled]="submitting"
-                aria-label="Ver números de celular registrados"
-                aria-describedby="client-phone-label recipient-help">
-                <span>{{ client.phones.length }} números registrados</span>
-                <svg class="disclosure-arrow" viewBox="0 0 20 20" aria-hidden="true"><path d="m5 7.5 5 5 5-5" /></svg>
-              </button>
-              <mat-menu #phoneMenu="matMenu" class="client-phone-menu" xPosition="before">
-                <div class="client-phone-list" role="list" aria-label="Números de celular registrados">
-                  <span class="client-phone-list-heading">Celulares registrados</span>
-                  @for (phone of client.phones; track phone) {
-                    <span class="client-phone-list-item" role="listitem">
+              <app-portal-dropdown class="client-phone-dropdown" [label]="client.phones.length + ' números registrados'"
+                [disabled]="submitting" accessibleLabel="Ver números de celular registrados"
+                describedBy="client-phone-label recipient-help">
+                <ul class="portal-dropdown-list" aria-label="Números de celular registrados">
+                  @for (phone of client.phones; track $index) {
+                    <li class="portal-dropdown-number">
                       <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="2" width="10" height="20" rx="2" /><path d="M10 5h4m-3 14h2" /></svg>
                       {{ phone }}
-                    </span>
+                    </li>
                   }
-                </div>
-              </mat-menu>
+                </ul>
+              </app-portal-dropdown>
             }
           </div>
         </div>

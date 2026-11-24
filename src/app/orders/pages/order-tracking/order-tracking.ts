@@ -1,10 +1,13 @@
 import { PortalFeedbackService } from '../../../shared/portal-feedback.service';
+import { PortalModalComponent } from '../../../shared/portal-modal';
 import { CommonModule } from '@angular/common';
 import { ChangeDetectorRef, Component, DestroyRef, OnInit, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
+import { CdkScrollable } from '@angular/cdk/scrolling';
+import { PortalDropdownComponent } from '../../../shared/portal-dropdown';
 import { ActivatedRoute, Router } from '@angular/router';
 import { finalize, timer } from 'rxjs';
 
@@ -27,9 +30,12 @@ type SideFilter = ClientOrder['side'] | 'ALL';
   standalone: true,
   imports: [
     CommonModule,
+    CdkScrollable,
+    PortalDropdownComponent,
     FormsModule,
     MatFormFieldModule,
     MatSelectModule,
+    PortalModalComponent,
   ],
   templateUrl: './order-tracking.html',
   styleUrl: './order-tracking.css',
@@ -42,7 +48,7 @@ export class OrderTrackingComponent implements OnInit {
 
   readonly channels = EXECUTION_CHANNELS;
   readonly statusLabels = CLIENT_ORDER_STATUS_LABELS;
-  readonly statuses = Object.entries(CLIENT_ORDER_STATUS_LABELS);
+  readonly statuses = Object.entries(CLIENT_ORDER_STATUS_LABELS).filter(([status]) => status !== 'DESCONOCIDO');
   readonly pageSize = 10;
 
   selectedChannel: ChannelFilter = 'ALL';
@@ -57,6 +63,7 @@ export class OrderTrackingComponent implements OnInit {
   updatingOrderId: number | null = null;
   lastUpdatedAt: Date | null = null;
   selectedOrder: ClientOrder | null = null;
+  orderToCancel: ClientOrder | null = null;
 
   constructor(
     readonly trackingService: ClientOrderTrackingService,
@@ -146,13 +153,13 @@ export class OrderTrackingComponent implements OnInit {
     this.updateUrl();
   }
 
-  entryStatus(order: ClientOrder): string {
-    if (order.status === 'INGRESADO') return order.enteredByName ? `Ingresada por ${order.enteredByName}` : 'Ingresada';
-    if (order.status === 'FIRMADO') {
-      if (order.canMarkEntered) return 'Lista para ingresar';
+  statusDetail(order: ClientOrder): string | null {
+    if (order.status === 'INGRESADO' && order.enteredByName) return `Ingresado por ${order.enteredByName}`;
+    if (order.status === 'CANCELADO' && order.canceledByName) return `Cancelado por ${order.canceledByName}`;
+    if (order.status === 'FIRMADO' && !order.canMarkEntered) {
       return order.operationResponsible ? `Esperando ingreso por ${order.operationResponsible}` : 'Sin ejecutor asignado';
     }
-    return order.status === 'CANCELADO' ? 'Proceso finalizado' : 'Pendiente de firma';
+    return null;
   }
 
   markEntered(order: ClientOrder): void {
@@ -176,6 +183,38 @@ export class OrderTrackingComponent implements OnInit {
         error: (error) => {
           this.feedback.error(error.error?.detail || error.error?.title || 'No se pudo marcar la orden como ingresada. Inténtalo nuevamente.');
           if (error.status === 409) this.refreshAfterConflict();
+        },
+      });
+  }
+
+  requestCancellation(order: ClientOrder): void {
+    if (!order.canCancel || order.status === 'CANCELADO' || this.updatingOrderId !== null) return;
+    this.orderToCancel = order;
+  }
+
+  confirmCancellation(): void {
+    const order = this.orderToCancel;
+    if (!order?.canCancel || this.loading || this.updatingOrderId !== null) return;
+
+    this.updatingOrderId = order.id;
+    this.trackingService.cancelOrder(order.id)
+      .pipe(takeUntilDestroyed(this.destroyRef), finalize(() => {
+        this.updatingOrderId = null;
+        this.cdr.markForCheck();
+      }))
+      .subscribe({
+        next: () => {
+          this.orderToCancel = null;
+          this.feedback.success(`La orden #${order.id} fue cancelada.`);
+          if (this.selectedOrder?.id === order.id)
+            this.selectedOrder = this.trackingService.getById(order.id.toString()) ?? null;
+          this.updatingOrderId = null;
+          this.refreshOrders();
+        },
+        error: (error) => {
+          this.orderToCancel = null;
+          this.feedback.error(error.error?.title || 'No se pudo confirmar la cancelación de la orden.');
+          this.refreshAfterConflict();
         },
       });
   }
@@ -251,7 +290,7 @@ export class OrderTrackingComponent implements OnInit {
     if (channel === 'ALL' || this.channels.some((item) => item.code === channel)) {
       this.selectedChannel = channel as ChannelFilter;
     }
-    if (status === 'ALL' || status && status in this.statusLabels) {
+    if (status === 'ALL' || this.statuses.some(([value]) => value === status)) {
       this.selectedStatus = status as StatusFilter;
     }
     if (side === 'ALL' || side === 'Compra' || side === 'Venta') {

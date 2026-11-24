@@ -30,7 +30,12 @@ describe('ClientOrderTrackingService', () => {
     );
     expect(request.request.method).toBe('GET');
     request.flush({
-      items: [{...trackingItem(),creadoPorRepresentanteId:34,responsableOperacionRepresentanteId:3,ingresadoPorRepresentanteId:3,nombreIngresadoPor:'Miguel',fechaIngresoUtc:'2026-11-16T17:20:00Z'}],
+      items: [{
+        ...trackingItem(), creadoPorRepresentanteId: 34, nombreCreador: 'Fernando',
+        responsableOrdenRepresentanteId: 2, nombreResponsableOrden: 'Lorena',
+        responsableOperacionRepresentanteId: 3, nombreResponsableOperacion: 'Miguel',
+        ingresadoPorRepresentanteId: 3, nombreIngresadoPor: 'Miguel', fechaIngresoUtc: '2026-11-16T17:20:00Z',
+      }],
       page: 1,
       pageSize: 100,
       totalCount: 1,
@@ -47,7 +52,9 @@ describe('ClientOrderTrackingService', () => {
         proposedQuantity: 100,
         executedQuantity: 0,
         pendingQuantity: 100,
-        status: 'PENDIENTE', creatorId: 34, operationResponsibleId: 3, enteredById: 3, enteredByName: 'Miguel', enteredAt: '2026-11-16T17:20:00Z',
+        status: 'PENDIENTE', creatorId: 34, creatorName: 'Fernando', orderResponsible: 'Lorena',
+        operationResponsibleId: 3, operationResponsible: 'Miguel',
+        enteredById: 3, enteredByName: 'Miguel', enteredAt: '2026-11-16T17:20:00Z',
       }),
     ]);
     expect(service.orders()).toEqual(result);
@@ -104,23 +111,26 @@ describe('ClientOrderTrackingService', () => {
     expect(service.orders().map((order) => order.id)).toEqual([41, 42]);
   });
 
-  it('preserves signature states and requires the API permission before enabling entry', () => {
+  it('maps entry and cancellation permissions for each workflow state', () => {
     service.loadOrders().subscribe();
     httpTesting.expectOne(`${environment.apiUrl}/PropuestaCliente/seguimiento?page=1&pageSize=100`).flush({
       items: ['ENVIADO', 'FIRMADO', 'FIRMADO', 'INGRESADO', 'CANCELADO', 'ACEPTADO', 'OTRO'].map((estado, i) => ({
         ...trackingItem(), codigoOrden: i + 1, estado, puedeMarcarIngresado: i !== 2,
+        puedeCancelar: i !== 2 && i !== 6, nombreCanceladoPor: estado === 'CANCELADO' ? 'Lorena' : null,
       })), page: 1, pageSize: 100, totalCount: 7, lastUpdatedAt: '2026-10-19T15:00:00Z',
     });
     expect(service.orders().map(o => o.status)).toEqual([
       'ENVIADO', 'FIRMADO', 'FIRMADO', 'INGRESADO', 'CANCELADO', 'PENDIENTE', 'DESCONOCIDO',
     ]);
     expect(service.orders().filter(o => o.canMarkEntered).map(o => o.id)).toEqual([2]);
+    expect(service.orders().filter(o => o.canCancel).map(o => o.id)).toEqual([1, 2, 4, 5, 6]);
+    expect(service.orders().find(o => o.status === 'CANCELADO')?.canceledByName).toBe('Lorena');
   });
 
   it('updates the local state only after entry is persisted and keeps it on failure', () => {
     service.loadOrders().subscribe();
     httpTesting.expectOne(`${environment.apiUrl}/PropuestaCliente/seguimiento?page=1&pageSize=100`).flush({
-      items: [{ ...trackingItem(), estado: 'FIRMADO', puedeMarcarIngresado: true }],
+      items: [{ ...trackingItem(), estado: 'FIRMADO', puedeMarcarIngresado: true, puedeCancelar: true }],
       page: 1, pageSize: 100, totalCount: 1, lastUpdatedAt: '2026-10-19T15:00:00Z',
     });
     service.markEntered(41).subscribe({ error: () => {} });
@@ -133,7 +143,7 @@ describe('ClientOrderTrackingService', () => {
     service.markEntered(41).subscribe();
     httpTesting.expectOne(`${environment.apiUrl}/PropuestaCliente/41/ingresado`)
       .flush({ propuestaId: 41, estado: 'INGRESADO' });
-    expect(service.orders()[0]).toMatchObject({ status: 'INGRESADO', canMarkEntered: false });
+    expect(service.orders()[0]).toMatchObject({ status: 'INGRESADO', canMarkEntered: false, canCancel: true });
   });
 
   function trackingItem(): TrackingItemResponse {

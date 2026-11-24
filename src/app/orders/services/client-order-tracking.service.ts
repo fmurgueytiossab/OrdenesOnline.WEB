@@ -5,6 +5,7 @@ import { EMPTY, Observable, expand, map, reduce, tap } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import {
   CLIENT_ORDER_STATUS_LABELS,
+  CancelOrderResponse,
   ClientOrder,
   ClientOrderStatus,
   MarkOrderEnteredResponse,
@@ -68,6 +69,17 @@ export class ClientOrderTrackingService {
     }));
   }
 
+  cancelOrder(id: number): Observable<CancelOrderResponse> {
+    return this.http.post<CancelOrderResponse>(
+      `${this.apiUrl}/PropuestaCliente/${id}/cancelar`, {},
+    ).pipe(tap(() => {
+      this.orderState.update(orders => orders.map(order => order.id === id
+        ? { ...order, status: 'CANCELADO', canMarkEntered: false,
+          cancelledQuantity: order.proposedQuantity, pendingQuantity: 0 }
+        : order));
+    }));
+  }
+
   private getTrackingPage(page: number): Observable<TrackingPageResponse> {
     const params = new HttpParams()
       .set('page', page.toString())
@@ -102,13 +114,16 @@ export class ClientOrderTrackingService {
       status: Object.hasOwn(CLIENT_ORDER_STATUS_LABELS, status)
         ? status as ClientOrderStatus : 'DESCONOCIDO',
       canMarkEntered: status === 'FIRMADO' && item.puedeMarcarIngresado === true,
+      canCancel: item.puedeCancelar === true,
       creatorId: item.creadoPorRepresentanteId,
+      creatorName: item.nombreCreador,
       ownerId: item.titularRepresentanteId,
       operationResponsibleId: item.responsableOperacionRepresentanteId,
       enteredById: item.ingresadoPorRepresentanteId,
       enteredByName: item.nombreIngresadoPor,
       enteredAt: item.fechaIngresoUtc,
-      orderResponsible: item.nombreResponsableOrden,
+      canceledByName: item.nombreCanceladoPor,
+      orderResponsible: item.responsableOrdenRepresentanteId ? item.nombreResponsableOrden : null,
       operationResponsible: item.nombreResponsableOperacion,
       referenceMode: item.modalidadReferencia,
       renta: item.tipoRenta,

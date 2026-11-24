@@ -46,13 +46,12 @@
           <h2>Filtrar órdenes</h2>
           <p>Combina uno o más campos para encontrar una operación.</p>
         </div>
-        <button class="clear-button" type="button" (click)="clearFilters()">Limpiar filtros</button>
       </div>
 
       <div class="filter-grid">
         <label class="plain-filter">
           <span>Número de orden</span>
-          <input name="orderNumber" [(ngModel)]="orderNumber" placeholder="Ej. ORD-000198" />
+          <input name="orderNumber" inputmode="numeric" [(ngModel)]="orderNumber" placeholder="Ej. 1654" />
         </label>
 
         <div class="filter-control">
@@ -91,10 +90,14 @@
           </mat-form-field>
         </div>
 
-        <button class="search-button" type="submit">
-          <span aria-hidden="true">⌕</span>
-          Buscar
-        </button>
+        <div class="filter-actions">
+          <button class="search-button" type="submit">
+            <span aria-hidden="true">⌕</span>
+            Buscar
+          </button>
+          <span class="filter-action-divider" aria-hidden="true"></span>
+          <button class="secondary-button clear-button" type="button" (click)="clearFilters()">Limpiar filtros</button>
+        </div>
       </div>
     </form>
 
@@ -119,7 +122,7 @@
           <p>Estamos consultando la información más reciente.</p>
         </div>
       } @else if (visibleOrders.length > 0) {
-        <div class="table-scroll">
+        <div class="table-scroll" cdkScrollable>
           <table>
             <thead>
               <tr>
@@ -136,6 +139,8 @@
             </thead>
             <tbody>
               @for (order of visibleOrders; track order.id) {
+                @let showEntryAction = order.status === 'FIRMADO' && order.canMarkEntered;
+                @let showCancelAction = order.status !== 'CANCELADO' && order.canCancel;
                 <tr>
                   <td data-label="Orden / Fecha">
                     <button class="order-link" type="button" (click)="openDetail(order)">
@@ -155,22 +160,35 @@
                   <td data-label="Cantidad" class="numeric">{{ order.proposedQuantity | number: '1.0-3' }}</td>
                   <td data-label="Precio" class="numeric">{{ formatPrice(order.price) }}</td>
                   <td data-label="Estado">
-                    <span class="status" [attr.data-status]="order.status">{{ statusLabel(order.status) }}</span>
+                    <div class="order-status">
+                      <span class="status" [attr.data-status]="order.status">{{ statusLabel(order.status) }}</span>
+                      @if (statusDetail(order); as detail) {
+                        <span class="status-detail">{{ detail }}</span>
+                      }
+                    </div>
                   </td>
                   <td data-label="Acción">
-                    @if (order.status === 'FIRMADO' && order.canMarkEntered) {
-                      <button class="enter-button" type="button"
-                        [disabled]="loading || updatingOrderId !== null"
-                        [attr.aria-label]="'Marcar orden ' + order.id + ' como ingresada'"
-                        (click)="markEntered(order)">
-                        {{ updatingOrderId === order.id ? 'Guardando…' : 'Marcar ingresada' }}
-                      </button>
-                    } @else if (order.status === 'FIRMADO' || order.status === 'INGRESADO') {
-                      <span class="entry-status" [class.entry-waiting]="order.status === 'FIRMADO'" [class.entry-completed]="order.status === 'INGRESADO'">{{ entryStatus(order) }}</span>
-                    } @else if (order.status === 'CANCELADO') {
-                      <span class="no-action">Proceso finalizado</span>
-                    } @else {
-                      <span class="no-action" aria-label="Sin acciones disponibles">—</span>
+                    @if (showEntryAction || showCancelAction) {
+                      <app-portal-dropdown class="order-actions-dropdown" #orderActions
+                        [label]="updatingOrderId === order.id ? 'Guardando…' : 'Acciones'"
+                        [accessibleLabel]="'Acciones de la orden #' + order.id">
+                        @if (showEntryAction) {
+                          <button type="button" class="portal-dropdown-option" [disabled]="loading || updatingOrderId !== null"
+                            (click)="orderActions.close(); markEntered(order)">
+                            <svg viewBox="0 0 20 20" aria-hidden="true"><path d="m4.5 10 3.5 3.5 7.5-7" /></svg>
+                            Marcar ingresada
+                          </button>
+                        }
+                        @if (showCancelAction) {
+                          <button type="button" class="portal-dropdown-option portal-dropdown-danger"
+                            (click)="orderActions.close(); requestCancellation(order)">
+                            <svg viewBox="0 0 20 20" aria-hidden="true">
+                              <circle cx="10" cy="10" r="7" /><path d="m8 8 4 4m0-4-4 4" />
+                            </svg>
+                            Cancelar orden
+                          </button>
+                        }
+                      </app-portal-dropdown>
                     }
                   </td>
                 </tr>
@@ -199,47 +217,77 @@
   </section>
 </main>
 
-@if (selectedOrder) {
-  <div class="dialog-backdrop" (click)="closeDialog()">
-    <section
-      class="dialog"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="detail-title"
-      (click)="$event.stopPropagation()">
-      <button class="dialog-close" type="button" aria-label="Cerrar" (click)="closeDialog()">×</button>
-
-      <span class="dialog-icon detail-icon" aria-hidden="true">↗</span>
-      <span class="eyebrow">Detalle de la orden {{ formatChannel(selectedOrder.channel) }}</span>
-      <h2 id="detail-title">#{{ selectedOrder.id }}</h2>
-      <div class="detail-grid">
-        <div><span>Código de orden</span><strong>#{{ selectedOrder.id }}</strong></div>
-        <div><span>Código de cliente</span><strong>{{ selectedOrder.clientCode }}</strong></div>
-        <div><span>Responsable de orden</span><strong>{{ selectedOrder.orderResponsible || 'No informado' }}</strong></div>
-        <div><span>Responsable de ejecución</span><strong>{{ selectedOrder.operationResponsible || 'No informado' }}</strong></div>
-        <div><span>Seguimiento de ingreso</span><strong>{{ entryStatus(selectedOrder) }}</strong></div>
-        @if (selectedOrder.enteredAt) {<div><span>Fecha de ingreso (Lima)</span><strong>{{ selectedOrder.enteredAt | date: 'dd/MM/yyyy, HH:mm':'-0500' }}</strong></div>}
-        <div><span>Modalidad referencial</span><strong>{{ selectedOrder.referenceMode || 'No informada' }}</strong></div>
-        <div><span>Renta</span><strong>{{ selectedOrder.renta || 'No informada' }}</strong></div>
-        <div><span>Estado</span><strong class="status" [attr.data-status]="selectedOrder.status">{{ statusLabel(selectedOrder.status) }}</strong></div>
-        <div><span>Canal de ejecución</span><strong>{{ formatChannel(selectedOrder.channel) }}</strong></div>
+@if (selectedOrder; as order) {
+  <app-portal-modal [title]="'Detalle de la orden #' + order.id" (closed)="closeDialog()">
+    <div class="detail-summary">
+      <div class="detail-instrument">
         <div>
-          <span>Fecha</span>
-          <strong>
-            {{ proposalTimestamp(selectedOrder) | date: (selectedOrder.proposalTime ? 'dd/MM/yyyy, HH:mm' : 'dd/MM/yyyy') }}
-          </strong>
+          <strong>{{ order.instrument }}</strong>
+          <span class="status" [attr.data-status]="order.status">{{ statusLabel(order.status) }}</span>
         </div>
-        <div><span>Instrumento</span><strong>{{ selectedOrder.instrument }}</strong></div>
-        <div><span>Operación</span><strong>{{ selectedOrder.side }}</strong></div>
-        <div><span>Precio</span><strong>{{ formatPrice(selectedOrder.price) }}</strong></div>
-        <div><span>Cantidad propuesta</span><strong>{{ selectedOrder.proposedQuantity | number: '1.0-3' }}</strong></div>
-        <div><span>Cantidad ejecutada</span><strong>{{ selectedOrder.executedQuantity | number: '1.0-3' }}</strong></div>
-        <div><span>Cantidad anulada</span><strong>{{ selectedOrder.cancelledQuantity | number: '1.0-3' }}</strong></div>
-        <div><span>Cantidad pendiente</span><strong>{{ selectedOrder.pendingQuantity | number: '1.0-3' }}</strong></div>
+        <p>{{ order.side }} · {{ formatChannel(order.channel) }}</p>
       </div>
-      <div class="dialog-actions">
-        <button type="button" class="secondary-button" (click)="closeDialog()">Cerrar</button>
-      </div>
-    </section>
-  </div>
+      <dl class="detail-metrics">
+        <div><dt>Cantidad propuesta</dt><dd>{{ order.proposedQuantity | number: '1.0-3' }}</dd></div>
+        <div><dt>Precio</dt><dd>{{ formatPrice(order.price) }}</dd></div>
+      </dl>
+    </div>
+
+    <div class="detail-sections">
+      <section class="detail-section" aria-labelledby="detail-data-heading">
+        <h3 id="detail-data-heading">Datos de la orden</h3>
+        <dl class="detail-fields">
+          <div><dt>Código de cliente</dt><dd>{{ order.clientCode }}</dd></div>
+          <div>
+            <dt>Fecha de registro</dt>
+            <dd>{{ proposalTimestamp(order) | date: (order.proposalTime ? 'dd/MM/yyyy, HH:mm' : 'dd/MM/yyyy') }}</dd>
+          </div>
+          <div><dt>Renta</dt><dd>{{ order.renta || 'No informada' }}</dd></div>
+          <div><dt>Modalidad referencial</dt><dd>{{ order.referenceMode || 'No informada' }}</dd></div>
+        </dl>
+      </section>
+      <section class="detail-section" aria-labelledby="detail-roles-heading">
+        <h3 id="detail-roles-heading">Responsables</h3>
+        <dl class="detail-fields">
+          <div><dt>Creada por</dt><dd>{{ order.creatorName || 'No informado' }}</dd></div>
+          <div><dt>Responsable del envío a firma</dt><dd>{{ order.orderResponsible || 'Sin asignar' }}</dd></div>
+          <div><dt>Responsable de ejecución e ingreso</dt><dd>{{ order.operationResponsible || 'Sin asignar' }}</dd></div>
+          @if (order.status === 'INGRESADO' || order.enteredById || order.enteredByName || order.enteredAt) {
+            <div>
+              <dt>Ingresada por</dt>
+              <dd>
+                {{ order.enteredByName || 'No informado' }}
+                @if (order.enteredAt) {
+                  <time [attr.datetime]="order.enteredAt">{{ order.enteredAt | date: 'dd/MM/yyyy, HH:mm':'-0500' }} (Lima)</time>
+                }
+              </dd>
+            </div>
+          }
+          @if (order.status === 'CANCELADO' && order.canceledByName) {
+            <div><dt>Cancelada por</dt><dd>{{ order.canceledByName }}</dd></div>
+          }
+        </dl>
+      </section>
+    </div>
+
+    <div class="dialog-actions">
+      <button type="button" class="secondary-button" (click)="closeDialog()">Cerrar</button>
+    </div>
+  </app-portal-modal>
+}
+
+@if (orderToCancel; as order) {
+  <app-portal-modal title="Cancelar orden" [compact]="true" [busy]="updatingOrderId === order.id"
+    (closed)="orderToCancel = null">
+    <p>¿Quieres cancelar la orden #{{ order.id }} de {{ order.instrument }}?</p>
+    @if (order.status === 'INGRESADO') {
+      <p>El ingreso original se conserva. La ejecución en el mercado se gestiona por separado.</p>
+    }
+    <div class="dialog-actions">
+      <button type="button" class="secondary-button" [disabled]="updatingOrderId !== null"
+        (click)="orderToCancel = null">Volver</button>
+      <button type="button" class="cancel-order-button confirm-cancellation" [disabled]="loading || updatingOrderId !== null"
+        (click)="confirmCancellation()">{{ updatingOrderId === order.id ? 'Cancelando…' : 'Confirmar cancelación' }}</button>
+    </div>
+  </app-portal-modal>
 }

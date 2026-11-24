@@ -6,7 +6,7 @@ import { FormsModule } from '@angular/forms';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
-import { MatMenuModule } from '@angular/material/menu';
+import { PortalDropdownComponent } from '../../../shared/portal-dropdown';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { Router } from '@angular/router';
 import {
@@ -48,7 +48,7 @@ interface ClientIdentity {
     MatFormFieldModule,
     MatSelectModule,
     MatInputModule,
-    MatMenuModule,
+    PortalDropdownComponent,
     MatSnackBarModule,
     OrderFormComponent,
   ],

@@ -2,12 +2,19 @@ import { ResponsibleListComponent } from '../../../shared/responsible-list';
 import { PortalFeedbackService } from '../../../shared/portal-feedback.service';
 import { REPRESENTANTES_UI } from '../../../shared/representantes-ui';
 import { PortalModalComponent } from '../../../shared/portal-modal';
+import { PortalTableComponent, TablePagination } from '../../../shared/portal-table';
 import { ChangeDetectorRef, Component, DestroyRef, OnInit, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { finalize } from 'rxjs';
 import { ReglaAdmin, ReglasConsulta, ReglasResponsablesService } from '../../../services/reglas-responsables.service';
 
-@Component({selector: 'app-reglas-responsables', standalone: true, imports: [...REPRESENTANTES_UI, PortalModalComponent, ResponsibleListComponent],
+interface GrupoDeReglas {
+  titularId: number;
+  nombre: string;
+  reglas: ReglaAdmin[];
+}
+
+@Component({selector: 'app-reglas-responsables', standalone: true, imports: [...REPRESENTANTES_UI, PortalModalComponent, PortalTableComponent, ResponsibleListComponent],
   templateUrl: './reglas-responsables.html', styleUrl: './reglas-responsables.css'})
 export class ReglasResponsablesComponent implements OnInit {
   private readonly feedback = inject(PortalFeedbackService);
@@ -16,7 +23,15 @@ export class ReglasResponsablesComponent implements OnInit {
   private readonly destroy = inject(DestroyRef);
   data: ReglasConsulta | null = null;
   busy = false; error = ''; mostrarFormulario = false; reglaActualId = 0;
-  titularFiltro = 0; rentaFiltro = ''; accionFiltro = ''; busqueda = ''; incluirHistorial = false; pagina = 1; readonly tamanoPagina = 20;
+  readonly tablaTitulares = new TablePagination();
+  private readonly combinaciones = [
+    { renta: 'RF', accion: 'ENVIO_OPERACION' },
+    { renta: 'RF', accion: 'ENVIO_ORDEN' },
+    { renta: 'RV', accion: 'ENVIO_OPERACION' },
+    { renta: 'RV', accion: 'ENVIO_ORDEN' },
+  ];
+  titularAbierto: number | null = null;
+  titularFiltro = 0; rentaFiltro = ''; accionFiltro = ''; busqueda = ''; incluirHistorial = false;
   buscarResponsable = '';
   modoEditor: 'crear' | 'editar' = 'crear';
   private reglaEditada: ReglaAdmin | null = null;
@@ -34,7 +49,7 @@ export class ReglasResponsablesComponent implements OnInit {
     if (this.busy) return;
     this.busy = true; this.error = '';
     this.api.consultar().pipe(takeUntilDestroyed(this.destroy), finalize(() => {this.busy = false; this.cdr.markForCheck();}))
-      .subscribe({next: data => {this.data = data; this.pagina = 1; if (this.mostrarFormulario) {
+      .subscribe({next: data => {this.data = data; this.tablaTitulares.reset(); if (this.mostrarFormulario) {
         if (this.esEdicion && this.reglaEditada) {
           const key = this.reglaEditada;
           const current = data.reglas.find(r => r.activo && r.titularRepresentanteId === key.titularRepresentanteId && r.tipoRenta === key.tipoRenta && r.accion === key.accion);
@@ -47,9 +62,31 @@ export class ReglasResponsablesComponent implements OnInit {
     const search = this.busqueda.trim().toLocaleLowerCase();
     return (this.data?.reglas ?? []).filter(r => (this.incluirHistorial || r.activo) && (!this.titularFiltro || r.titularRepresentanteId === this.titularFiltro) && (!this.rentaFiltro || r.tipoRenta === this.rentaFiltro) && (!this.accionFiltro || r.accion === this.accionFiltro) && `${r.reglaId} ${r.titular} ${r.opciones.map(x => x.nombre).join(' ')}`.toLocaleLowerCase().includes(search));
   }
-  get reglasPagina() { return this.reglasFiltradas.slice((this.pagina - 1) * this.tamanoPagina, this.pagina * this.tamanoPagina); }
-  get paginas() { return Math.max(1, Math.ceil(this.reglasFiltradas.length / this.tamanoPagina)); }
-  filtrar() { this.pagina = 1; }
+  get titularesFiltrados() {
+    const grupos = new Map<number, GrupoDeReglas>();
+    for (const regla of this.reglasFiltradas) {
+      const existing = grupos.get(regla.titularRepresentanteId);
+      if (existing) existing.reglas.push(regla);
+      else grupos.set(regla.titularRepresentanteId, {
+        titularId: regla.titularRepresentanteId, nombre: regla.titular, reglas: [regla],
+      });
+    }
+    return [...grupos.values()].sort((a, b) => a.nombre.localeCompare(b.nombre, 'es') || a.titularId - b.titularId);
+  }
+  combinacionesDe(grupo: GrupoDeReglas) {
+    const search = this.busqueda.trim().toLocaleLowerCase();
+    const mostrarCombinacionesVacias = !search || grupo.nombre.toLocaleLowerCase().includes(search);
+    return this.combinaciones
+      .filter(c => (!this.rentaFiltro || c.renta === this.rentaFiltro) && (!this.accionFiltro || c.accion === this.accionFiltro))
+      .map(c => ({
+        ...c,
+        reglas: grupo.reglas.filter(r => r.tipoRenta === c.renta && r.accion === c.accion)
+          .sort((a, b) => Number(b.activo) - Number(a.activo) || b.reglaId - a.reglaId),
+      }))
+      .filter(c => mostrarCombinacionesVacias || c.reglas.length > 0);
+  }
+  alternarTitular(id: number) { this.titularAbierto = this.titularAbierto === id ? null : id; }
+  filtrar() { this.tablaTitulares.reset(); }
   get responsablesVisibles() {
     const search = this.buscarResponsable.trim().toLocaleLowerCase();
     return (this.data?.representantes ?? []).filter(p => (p.activo || this.form.opciones.includes(p.representanteId)) && `${p.nombre} ${p.correoCorporativo}`.toLocaleLowerCase().includes(search));
@@ -84,8 +121,8 @@ export class ReglasResponsablesComponent implements OnInit {
     const editing = this.esEdicion;
     this.api.guardar(key.titularId, key.renta, key.accion, request)
       .pipe(takeUntilDestroyed(this.destroy), finalize(() => {this.busy = false; this.cdr.markForCheck();}))
-      .subscribe({next: data => {this.data = data; this.mostrarFormulario = false; this.pagina = 1; this.feedback.success(editing ? 'Regla actualizada.' : 'Regla creada.');}, error: e => this.error = e.error?.title ?? 'No se pudo guardar la regla. Actualiza antes de reintentar.'});
+      .subscribe({next: data => {this.data = data; this.mostrarFormulario = false; this.tablaTitulares.reset(); this.feedback.success(editing ? 'Regla actualizada.' : 'Regla creada.');}, error: e => this.error = e.error?.title ?? 'No se pudo guardar la regla. Actualiza antes de reintentar.'});
   }
-  responsablesDe(rule: ReglaAdmin) { return rule.modoResolucion === 'TITULAR' ? [rule.titular] : rule.opciones.map(p => p.nombre + (p.activo ? '' : ' (inactivo)')); }
+  responsablesDe(rule: ReglaAdmin) { return rule.opciones.map(p => p.nombre + (p.activo ? '' : ' (inactivo)')); }
   accionNombre(action: string) { return action === 'ENVIO_ORDEN' ? 'Envío de orden' : 'Ejecución de operación'; }
 }

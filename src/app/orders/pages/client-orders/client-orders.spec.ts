@@ -251,19 +251,25 @@ describe('ClientOrdersComponent client blocking', () => {
     fixture.changeDetectorRef.markForCheck();
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('.single-phone').textContent).toContain('999888777');
-    expect(fixture.nativeElement.querySelector('.readonly-disclosure')).toBeNull();
+    expect(fixture.nativeElement.querySelector('.client-phone-dropdown button')).toBeNull();
     expect(fixture.nativeElement.textContent).not.toContain('Correo electrónico');
 
     component.selectClient(client({ nucel: ['999888777', '988777666'] }));
     fixture.changeDetectorRef.markForCheck();
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('.single-phone')).toBeNull();
-    expect(fixture.nativeElement.querySelector('.readonly-disclosure').textContent).toContain('2 números registrados');
+    const phoneMenu = fixture.nativeElement.querySelector('.client-phone-dropdown button') as HTMLButtonElement;
+    expect(phoneMenu.textContent).toContain('2 números registrados');
+    phoneMenu.click();
+    fixture.detectChanges();
+    const phonePanel = document.getElementById(phoneMenu.getAttribute('aria-controls')!)!;
+    expect(Array.from(phonePanel.querySelectorAll('li'), item => item.textContent?.trim()))
+      .toEqual(['999888777', '988777666']);
 
     component.selectClient(client({ nucel: [] }));
     fixture.changeDetectorRef.markForCheck();
     fixture.detectChanges();
-    expect(fixture.nativeElement.querySelector('.readonly-disclosure')).toBeNull();
+    expect(fixture.nativeElement.querySelector('.client-phone-dropdown button')).toBeNull();
     expect(fixture.nativeElement.querySelector('.phone-field').textContent).toContain('Sin celular registrado');
   });
 

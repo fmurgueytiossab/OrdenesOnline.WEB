@@ -7,3 +7,41 @@
 .responsibility-mode{width:320px;max-width:100%}.rule-editor-actions{justify-content:space-between;gap:24px;margin-top:20px}
 
 .rule-context{padding:18px;margin:18px 0 28px;border:1px solid #e4e7ec;border-radius:12px;background:#f8fafc}.rule-context>strong{display:block;font-size:18px;color:#182230}.context-tags{display:flex;flex-wrap:wrap;gap:10px;margin-top:12px}.context-tags span{padding:5px 10px;border-radius:16px;background:#eef4ff;color:#1849a9;font-size:13px}.rules-filter-actions{display:flex;justify-content:space-between;align-items:center;gap:20px;margin:0 0 20px;flex-wrap:wrap}.existing-rule p{margin-top:0}.existing-rule button{background:#fff}.rule-key-fields{margin-bottom:24px}
+
+.holders-table { table-layout: fixed; min-width: 0; }
+.holder-number { width: 4rem; }
+.holder-count { width: 7rem; }
+.holder-row > td { vertical-align: middle; }
+button.holder-toggle:not(.mat-mdc-icon-button) {
+  display: inline-flex;
+  align-items: center;
+  gap: .65rem;
+  max-width: 100%;
+  padding: .35rem .45rem;
+  border-color: transparent;
+  background: transparent;
+  color: #175cd3;
+  font-weight: 650;
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+button.holder-toggle:not(:disabled):hover { background: #eef4ff; color: #1849a9; }
+.holder-chevron {
+  flex: 0 0 .45rem;
+  height: .45rem;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(-45deg);
+}
+.holder-open { background: #f8fafc; }
+.holder-open .holder-chevron { transform: rotate(45deg); }
+.holder-detail > td { padding: .65rem; background: #f8fafc; }
+.rule-breakdown { overflow: auto; border: 1px solid #e4e7ec; border-radius: 8px; background: #fff; }
+.rule-breakdown:focus-visible { outline: 2px solid #84adff; outline-offset: -2px; }
+.rule-breakdown table { min-width: 720px; }
+.rule-breakdown .rule-combination { color: #344054; }
+.rule-breakdown tbody:last-child > tr:last-child > * { border-bottom: 0; }
+@media(max-width:650px) {
+  .holder-number { width: 2.5rem; }
+  .holder-count { width: 4rem; }
+}
